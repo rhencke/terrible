@@ -34,22 +34,17 @@ python -m pip install -e .
 
 ## Usage (example)
 
-Below is an illustrative Terraform HCL snippet demonstrating how you might
-conceptually declare an Ansible-managed resource. This repository does not
-include a real Terraform registry provider binary; it's intended as an
-implementation and learning reference.
+This repository includes a small runnable helper so the example works
+immediately with only Python available. To run the example and reproduce the
+playbook's effect (create/write the example file), run:
 
-```hcl
-provider "ansible" {}
-
-resource "ansible_playbook" "deploy_app" {
-	playbook = "site.yml"
-	inventory = "inventory.ini"
-}
+```bash
+python3 examples/run_example.py
 ```
 
-In practice, use the Python code in this repo to drive Ansible runs and adapt
-its behavior for your environment.
+There is also a conceptual Terraform snippet in `examples/terraform/main.tf`
+showing how an `ansible` provider could be used in HCL; that snippet is for
+illustration only and not required to run the included example.
 
 ## Development
 

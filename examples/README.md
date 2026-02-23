@@ -9,11 +9,17 @@ this repository.
 - `ansible/site.yml` — a tiny playbook that creates/writes `/tmp/ansible_provider_example.txt`.
 - `ansible/inventory.ini` — inventory with a `localhost` connection.
 
-To try the example locally (conceptual):
+To try the example locally (works out-of-the-box):
 
-1. Install Python dependencies from `pyproject.toml`.
-2. Run the provider or Python helper code that bridges Terraform and Ansible.
-3. Use Terraform to apply the `main.tf` configuration.
+1. Run the included Python runner which mimics the example Ansible playbook:
+
+```bash
+python3 examples/run_example.py
+```
+
+This writes `/tmp/ansible_provider_example.txt` with a short message. The
+repo also contains a conceptual Terraform `examples/terraform/main.tf` that
+shows how a real `ansible` provider could be used.
 
 This repository is a learning/reference implementation — it does not ship a
 real provider binary for Terraform registries.
