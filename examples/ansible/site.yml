@@ -1,0 +1,12 @@
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ensure example file exists
+      ansible.builtin.file:
+        path: /tmp/ansible_provider_example.txt
+        state: touch
+
+    - name: Write a short message
+      ansible.builtin.copy:
+        dest: /tmp/ansible_provider_example.txt
+        content: "Managed by the terrible Ansible Terraform provider example\n"
