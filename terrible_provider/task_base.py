@@ -9,7 +9,8 @@ import tempfile
 import uuid
 from typing import Optional
 
-from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, DeleteContext, ImportContext
+from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, DeleteContext, ImportContext, PlanContext
+from tf.types import Unknown
 
 
 def _ansible_bin() -> str:
@@ -72,6 +73,9 @@ class TerribleTaskBase(Resource):
     @classmethod
     def get_schema(cls):
         return cls._schema
+
+    def plan(self, ctx: PlanContext, current: Optional[dict], planned: dict) -> Optional[dict]:
+        return {**planned, "result": Unknown, "changed": Unknown}
 
     def _resolve_host(self, host_id: str, diags) -> Optional[dict]:
         h = self._prov._state.get(host_id)
