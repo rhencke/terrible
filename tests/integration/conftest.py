@@ -2,14 +2,17 @@
 Integration test fixtures — run against the native host (no VMs).
 
 Session-scoped:
-  provider_binary  — builds the self-contained pex binary once per session
-  provider_install — installs it into a tmp plugin dir and writes a
-                     .terraformrc with a filesystem_mirror so tofu init
-                     resolves the provider locally (no network needed)
+  provider_install — installs the dev-mode provider binary into a tmp plugin
+                     dir and writes a .terraformrc filesystem_mirror so
+                     tofu init resolves the provider locally (no network).
+
+The provider binary used is the editable-install entrypoint from the project
+venv (.venv/bin/terraform-provider-terrible), so no separate build step is
+needed — just 'uv sync' (or 'pip install -e .').
 
 Prerequisites:
   tofu or terraform on PATH
-  uv (for pex build)
+  uv sync (or pip install -e .) already run
 """
 
 import shutil
@@ -24,6 +27,8 @@ PROVIDER_NS = "terrible"
 PROVIDER_TYPE = "terrible"
 PROVIDER_VERSION = "0.0.1"
 
+_PROVIDER_ENTRYPOINT = REPO_ROOT / ".venv" / "bin" / "terraform-provider-terrible"
+
 
 def _find_tf() -> str:
     for name in ("tofu", "terraform"):
@@ -33,34 +38,27 @@ def _find_tf() -> str:
 
 
 @pytest.fixture(scope="session")
-def provider_binary():
-    """Build the self-contained provider binary once for the test session."""
-    binary = REPO_ROOT / "terraform-provider-terrible"
-    print("\n[setup] Building provider binary (pex)...", flush=True)
-    subprocess.run(["make", "build-binary"], cwd=str(REPO_ROOT), check=True)
-    assert binary.exists(), f"build-binary did not produce {binary}"
-    print(f"[setup] Binary ready: {binary}", flush=True)
-    return binary
-
-
-@pytest.fixture(scope="session")
-def provider_install(provider_binary, tmp_path_factory):
+def provider_install(tmp_path_factory):
     """
-    Install the provider binary into a filesystem mirror directory and write a
-    .terraformrc that points tofu/terraform at it.  This lets 'tofu init' run
-    offline — no registry lookup required.
+    Install the dev provider into a filesystem mirror directory and write a
+    .terraformrc pointing at it so tofu init works offline.
     """
     from tf.runner import install_provider
 
+    assert _PROVIDER_ENTRYPOINT.exists(), (
+        f"Provider entrypoint not found: {_PROVIDER_ENTRYPOINT}\n"
+        "Run 'uv sync' or 'pip install -e .' first."
+    )
+
     plugin_dir = tmp_path_factory.mktemp("plugins")
-    print(f"[setup] Installing provider into {plugin_dir} ...", flush=True)
+    print(f"\n[setup] Installing provider from {_PROVIDER_ENTRYPOINT}", flush=True)
     install_provider(
         PROVIDER_HOST,
         PROVIDER_NS,
         PROVIDER_TYPE,
         PROVIDER_VERSION,
         plugin_dir,
-        provider_binary,
+        _PROVIDER_ENTRYPOINT,
     )
 
     tfrc = tmp_path_factory.mktemp("tfrc") / ".terraformrc"

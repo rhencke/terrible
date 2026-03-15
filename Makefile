@@ -33,10 +33,10 @@ example-fresh: install-provider
 	rm -f examples/terraform_provider/terraform.tfstate examples/terraform_provider/terraform.tfstate.backup terrible_state.json
 	cd examples/terraform_provider && terraform apply -auto-approve
 
-integration-test: build-binary
+integration-test:
 	TERRIBLE_INTEGRATION=1 $(UV) pytest tests/integration/ -v --timeout=120
 
-integration-test-verbose: build-binary
+integration-test-verbose:
 	TERRIBLE_INTEGRATION=1 $(UV) pytest tests/integration/ -v -s --timeout=120
 
 build-binary:
