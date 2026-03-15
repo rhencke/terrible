@@ -1,25 +1,54 @@
 Examples
 --------
 
-This folder contains a minimal example showing how you might declare an
-Ansible-managed resource from Terraform using the pure-Python provider in
-this repository.
+Each subdirectory is a self-contained Terraform configuration that demonstrates
+a different pattern for using the `terrible` provider.
 
-- `terraform/main.tf` — illustrative HCL using a hypothetical `ansible` provider.
-- `ansible/site.yml` — a tiny playbook that creates/writes `/tmp/ansible_provider_example.txt`.
-- `ansible/inventory.ini` — inventory with a `localhost` connection.
-
-To try the example locally (works out-of-the-box):
-
-1. Run the included Python runner which mimics the example Ansible playbook:
+All examples that target localhost can be run with:
 
 ```bash
-python3 examples/run_example.py
+make install-provider          # build + install the provider binary once
+cd examples/<name>
+tofu init
+tofu apply -var="state_file=/tmp/<name>_state.json"
 ```
 
-This writes `/tmp/ansible_provider_example.txt` with a short message. The
-repo also contains a conceptual Terraform `examples/terraform/main.tf` that
-shows how a real `ansible` provider could be used.
+---
 
-This repository is a learning/reference implementation — it does not ship a
-real provider binary for Terraform registries.
+### `terraform_provider/` — basic provider smoke-test
+
+Ping localhost, run a command, create a directory.  The simplest possible
+working configuration — a good starting point.
+
+---
+
+### `task_chain/` — sequential execution with explicit dependencies
+
+Tasks form a pipeline: create directory → write config → start app → verify.
+Each step declares `depends_on` the previous one so Terraform runs them in
+order and stops if any step fails.
+
+---
+
+### `parallel_tasks/` — the same tasks applied to multiple hosts concurrently
+
+Two hosts with identical task sets and no cross-host dependency.  Terraform's
+default parallelism runs both sets simultaneously with no extra configuration.
+Replace the placeholder IPs with real SSH targets.
+
+---
+
+### `triggers/` — re-run a task when inputs change
+
+The `triggers` attribute forces a resource to be replaced (and therefore
+re-executed) whenever any value in the map changes, even if the Ansible module
+itself would be idempotent.  Useful for deployments, restarts, and handlers.
+
+---
+
+### `cloud_vm/` — provision a cloud VM then configure it with terrible
+
+Creates an EC2 instance with the AWS provider, waits for SSH, then uses
+`terrible_host` (consuming the instance's public IP) to run configuration
+tasks.  Demonstrates how terrible slots into a larger Terraform graph
+alongside cloud resources.  Requires AWS credentials.

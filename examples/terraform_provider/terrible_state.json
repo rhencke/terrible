@@ -1,0 +1,319 @@
+{
+  "073b05e5723140d5b1ef0bd88ca18990": {
+    "access_time": null,
+    "access_time_format": null,
+    "changed": true,
+    "dest": null,
+    "follow": null,
+    "force": null,
+    "host_id": "eda5cc3e5e4942f3966cc023ce63282b",
+    "id": "073b05e5723140d5b1ef0bd88ca18990",
+    "modification_time": null,
+    "modification_time_format": null,
+    "path": "/tmp/terrible",
+    "recurse": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": true,
+      "gid": 1000,
+      "group": "codespace",
+      "mode": "0756",
+      "owner": "codespace",
+      "path": "/tmp/terrible",
+      "size": 4096,
+      "state": "directory",
+      "uid": 1000
+    },
+    "src": null,
+    "state": "directory",
+    "triggers": null
+  },
+  "0963893ef2aa4fb791d5c628145d7397": {
+    "changed": false,
+    "data": null,
+    "host_id": "d1828080b6d849af9795de49e574ff91",
+    "id": "0963893ef2aa4fb791d5c628145d7397",
+    "ping": "pong",
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": false,
+      "ping": "pong"
+    },
+    "triggers": null
+  },
+  "23cf1e87ff444698899271367796103c": {
+    "connection": "local",
+    "host": "localhost",
+    "id": "23cf1e87ff444698899271367796103c",
+    "port": 22,
+    "private_key_path": null,
+    "user": null
+  },
+  "2d97bd5f1f5640a6a8e07b78724e65ee": {
+    "access_time": null,
+    "access_time_format": null,
+    "changed": false,
+    "dest": null,
+    "follow": null,
+    "force": null,
+    "host_id": "c46c60cd0d2646c49b3304c218bc7d94",
+    "id": "2d97bd5f1f5640a6a8e07b78724e65ee",
+    "modification_time": null,
+    "modification_time_format": null,
+    "path": "/tmp/terrible",
+    "recurse": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": false,
+      "gid": 1000,
+      "group": "codespace",
+      "mode": "0756",
+      "owner": "codespace",
+      "path": "/tmp/terrible",
+      "size": 4096,
+      "state": "directory",
+      "uid": 1000
+    },
+    "src": null,
+    "state": "directory",
+    "triggers": null
+  },
+  "9e5f5bc50e04490c8a983f25dce7062a": {
+    "argv": null,
+    "changed": true,
+    "chdir": null,
+    "cmd": [
+      "echo",
+      "hello from terrible"
+    ],
+    "creates": null,
+    "delta": "0:00:00.020836",
+    "end": "2026-03-15 17:46:50.405438",
+    "expand_argument_vars": null,
+    "free_form": null,
+    "host_id": "eda5cc3e5e4942f3966cc023ce63282b",
+    "id": "9e5f5bc50e04490c8a983f25dce7062a",
+    "msg": "",
+    "rc": 0,
+    "removes": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": true,
+      "cmd": [
+        "echo",
+        "hello from terrible"
+      ],
+      "delta": "0:00:00.020836",
+      "end": "2026-03-15 17:46:50.405438",
+      "msg": "",
+      "rc": 0,
+      "start": "2026-03-15 17:46:50.384602",
+      "stderr": "",
+      "stderr_lines": [],
+      "stdout": "hello from terrible",
+      "stdout_lines": [
+        "hello from terrible"
+      ]
+    },
+    "start": "2026-03-15 17:46:50.384602",
+    "stderr": "",
+    "stderr_lines": [],
+    "stdin": null,
+    "stdin_add_newline": null,
+    "stdout": "hello from terrible",
+    "stdout_lines": [
+      "hello from terrible"
+    ],
+    "strip_empty_ends": null,
+    "triggers": null
+  },
+  "b56575ef60034e0fac502bdf1e2a5a5a": {
+    "argv": null,
+    "changed": true,
+    "chdir": null,
+    "cmd": "echo 'hello from terrible'",
+    "creates": null,
+    "delta": "0:00:00.012732",
+    "end": "2026-03-15 17:48:58.828554",
+    "expand_argument_vars": null,
+    "free_form": null,
+    "host_id": "d1828080b6d849af9795de49e574ff91",
+    "id": "b56575ef60034e0fac502bdf1e2a5a5a",
+    "msg": "",
+    "rc": 0,
+    "removes": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": true,
+      "cmd": [
+        "echo",
+        "hello from terrible"
+      ],
+      "delta": "0:00:00.012732",
+      "end": "2026-03-15 17:48:58.828554",
+      "msg": "",
+      "rc": 0,
+      "start": "2026-03-15 17:48:58.815822",
+      "stderr": "",
+      "stderr_lines": [],
+      "stdout": "hello from terrible",
+      "stdout_lines": [
+        "hello from terrible"
+      ]
+    },
+    "start": "2026-03-15 17:48:58.815822",
+    "stderr": "",
+    "stderr_lines": [],
+    "stdin": null,
+    "stdin_add_newline": null,
+    "stdout": "hello from terrible",
+    "stdout_lines": [
+      "hello from terrible"
+    ],
+    "strip_empty_ends": null,
+    "triggers": null
+  },
+  "c42983e6df074fb1ad2ac96a46ae43b9": {
+    "argv": null,
+    "changed": true,
+    "chdir": null,
+    "cmd": "echo 'hello from terrible'",
+    "creates": null,
+    "delta": "0:00:00.013580",
+    "end": "2026-03-15 17:54:21.217379",
+    "expand_argument_vars": null,
+    "free_form": null,
+    "host_id": "c46c60cd0d2646c49b3304c218bc7d94",
+    "id": "c42983e6df074fb1ad2ac96a46ae43b9",
+    "msg": false,
+    "rc": 0,
+    "removes": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": true,
+      "cmd": [
+        "echo",
+        "hello from terrible"
+      ],
+      "delta": "0:00:00.013580",
+      "end": "2026-03-15 17:54:21.217379",
+      "msg": "",
+      "rc": 0,
+      "start": "2026-03-15 17:54:21.203799",
+      "stderr": "",
+      "stderr_lines": [],
+      "stdout": "hello from terrible",
+      "stdout_lines": [
+        "hello from terrible"
+      ]
+    },
+    "start": "2026-03-15 17:54:21.203799",
+    "stderr": "",
+    "stderr_lines": [],
+    "stdin": null,
+    "stdin_add_newline": null,
+    "stdout": "hello from terrible",
+    "stdout_lines": [
+      "hello from terrible"
+    ],
+    "strip_empty_ends": null,
+    "triggers": null
+  },
+  "c46c60cd0d2646c49b3304c218bc7d94": {
+    "connection": "local",
+    "host": "localhost",
+    "id": "c46c60cd0d2646c49b3304c218bc7d94",
+    "port": 22,
+    "private_key_path": null,
+    "user": null
+  },
+  "cd9eff16c8d2494b9ba85f9b0501cc18": {
+    "access_time": null,
+    "access_time_format": null,
+    "changed": false,
+    "dest": null,
+    "follow": null,
+    "force": null,
+    "host_id": "d1828080b6d849af9795de49e574ff91",
+    "id": "cd9eff16c8d2494b9ba85f9b0501cc18",
+    "modification_time": null,
+    "modification_time_format": null,
+    "path": "/tmp/terrible",
+    "recurse": null,
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": false,
+      "gid": 1000,
+      "group": "codespace",
+      "mode": "0756",
+      "owner": "codespace",
+      "path": "/tmp/terrible",
+      "size": 4096,
+      "state": "directory",
+      "uid": 1000
+    },
+    "src": null,
+    "state": "directory",
+    "triggers": null
+  },
+  "cdcb3f38f32d4d43a6b6cd0a1fda9d68": {
+    "changed": false,
+    "data": null,
+    "host_id": "c46c60cd0d2646c49b3304c218bc7d94",
+    "id": "cdcb3f38f32d4d43a6b6cd0a1fda9d68",
+    "ping": "pong",
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": false,
+      "ping": "pong"
+    },
+    "triggers": null
+  },
+  "d1828080b6d849af9795de49e574ff91": {
+    "connection": "local",
+    "host": "localhost",
+    "id": "d1828080b6d849af9795de49e574ff91",
+    "port": 22,
+    "private_key_path": null,
+    "user": null
+  },
+  "de4ac049e06e4baab8f4e7e180c31b54": {
+    "changed": false,
+    "data": null,
+    "host_id": "eda5cc3e5e4942f3966cc023ce63282b",
+    "id": "de4ac049e06e4baab8f4e7e180c31b54",
+    "ping": "pong",
+    "result": {
+      "ansible_facts": {
+        "discovered_interpreter_python": "/usr/local/python/3.12.1/bin/python3.12"
+      },
+      "changed": false,
+      "ping": "pong"
+    },
+    "triggers": null
+  },
+  "eda5cc3e5e4942f3966cc023ce63282b": {
+    "connection": "local",
+    "host": "localhost",
+    "id": "eda5cc3e5e4942f3966cc023ce63282b",
+    "port": 22,
+    "private_key_path": null,
+    "user": null
+  }
+}
