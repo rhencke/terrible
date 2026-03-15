@@ -95,7 +95,22 @@ class TerribleTaskBase(Resource):
 
     def plan(self, ctx: PlanContext, current: Optional[dict], planned: dict) -> Optional[dict]:
         unknown_outputs = {name: Unknown for name in self.__class__._return_attr_names}
-        return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
+        if current is None:
+            # New resource — outputs unknown until creation
+            return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
+
+        # Existing resource — check whether any input attribute changed
+        computed = self.__class__._return_attr_names | {"id", "result", "changed"}
+        inputs_changed = any(
+            v is not Unknown and current.get(k) != v
+            for k, v in planned.items()
+            if k not in computed
+        )
+        if inputs_changed:
+            return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
+
+        # Nothing changed — stable no-op plan
+        return dict(current)
 
     def _resolve_host(self, host_id: str, diags) -> Optional[dict]:
         h = self._prov._state.get(host_id)
