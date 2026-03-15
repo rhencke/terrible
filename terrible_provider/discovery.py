@@ -1,9 +1,10 @@
 """
 Dynamic discovery of Ansible task types and creation of per-task Resource subclasses.
 
-Each Ansible module file embeds a DOCUMENTATION YAML string that describes its
-options. We parse that to build a tf Schema, then dynamically subclass
-TerribleTaskBase for each discovered task type.
+Each Ansible module file embeds DOCUMENTATION (input options) and RETURN (output
+attributes) YAML blocks. We parse both to build a full tf Schema — options become
+required/optional attributes, return values become computed attributes — then
+dynamically subclass TerribleTaskBase for each discovered task type.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ _TYPE_MAP = {
     "float": Number(),
 }
 
+# Always present on every task resource
 _FRAMEWORK_ATTRS = [
     Attribute("id", String(), description="Unique task resource ID", computed=True),
     Attribute(
@@ -48,36 +50,29 @@ _FRAMEWORK_ATTRS = [
         required=True,
         requires_replace=True,
     ),
-    Attribute("result", NormalizedJson(), description="JSON result returned by Ansible", computed=True),
+    Attribute("result", NormalizedJson(), description="Full raw JSON result from Ansible", computed=True),
     Attribute("changed", Bool(), description="Whether the task reported a change", computed=True),
 ]
 
+_FRAMEWORK_NAMES = {a.name for a in _FRAMEWORK_ATTRS}
+
 _DOC_RE = re.compile(r'^DOCUMENTATION\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
+_RET_RE = re.compile(r'^RETURN\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
 
 
 def _fqcn_for_path(path: str) -> Optional[str]:
-    """Derive the Ansible FQCN for a module file path."""
     directory = os.path.dirname(path)
     shortname = os.path.splitext(os.path.basename(path))[0]
-
     if _ANSIBLE_BUILTIN_MODULES.match(directory):
         return f"ansible.builtin.{shortname}"
-
     m = _COLLECTION_MODULES.match(directory)
     if m:
-        namespace, collection = m.group(1), m.group(2)
-        return f"{namespace}.{collection}.{shortname}"
-
+        return f"{m.group(1)}.{m.group(2)}.{shortname}"
     return None
 
 
-def _parse_documentation(path: str) -> Optional[dict]:
-    try:
-        with open(path, encoding="utf-8", errors="replace") as f:
-            source = f.read()
-    except OSError:
-        return None
-    m = _DOC_RE.search(source)
+def _parse_yaml_block(source: str, regex: re.Pattern) -> Optional[dict]:
+    m = regex.search(source)
     if not m:
         return None
     try:
@@ -90,26 +85,57 @@ def _tf_type_for(ansible_type: str):
     return _TYPE_MAP.get(str(ansible_type).lower(), String())
 
 
-def _options_to_attrs(options: dict) -> list[Attribute]:
-    attrs = []
-    for name, spec in (options or {}).items():
-        if not isinstance(spec, dict):
+def _description(spec: dict) -> str:
+    d = spec.get("description", "")
+    return " ".join(d) if isinstance(d, list) else (d or "")
+
+
+def _build_schema(options: dict, returns: dict) -> tuple[Schema, set[str]]:
+    """
+    Merge DOCUMENTATION options and RETURN entries into a Schema.
+
+    - options-only → required/optional input attribute
+    - returns-only → computed output attribute
+    - in both     → optional + computed (passthrough: user may set it; Ansible will echo it back)
+
+    Returns the Schema and the set of return-attribute names (for use in _execute).
+    """
+    option_names = set(options)
+    return_names = {k for k in returns if k not in _FRAMEWORK_NAMES}
+
+    attrs: list[Attribute] = list(_FRAMEWORK_ATTRS)
+
+    # Input-only options
+    for name, spec in options.items():
+        if name in _FRAMEWORK_NAMES or not isinstance(spec, dict):
             continue
-        atype = spec.get("type", "str")
         required = bool(spec.get("required", False))
-        description = spec.get("description", "")
-        if isinstance(description, list):
-            description = " ".join(description)
+        in_return = name in return_names
         attrs.append(
             Attribute(
                 name,
-                _tf_type_for(atype),
-                description=description,
-                required=required,
-                optional=not required,
+                _tf_type_for(spec.get("type", "str")),
+                description=_description(spec),
+                required=required and not in_return,
+                optional=not required or in_return,
+                computed=in_return,
             )
         )
-    return attrs
+
+    # Return-only outputs (not already added above)
+    for name, spec in returns.items():
+        if name in _FRAMEWORK_NAMES or name in option_names or not isinstance(spec, dict):
+            continue
+        attrs.append(
+            Attribute(
+                name,
+                _tf_type_for(spec.get("type", "str")),
+                description=_description(spec),
+                computed=True,
+            )
+        )
+
+    return Schema(attributes=attrs), return_names
 
 
 def _resource_name_for(fqcn: str) -> str:
@@ -118,16 +144,17 @@ def _resource_name_for(fqcn: str) -> str:
     return fqcn.replace(".", "_").replace("-", "_")
 
 
-def make_task_class(fqcn: str, options: dict) -> type:
+def make_task_class(fqcn: str, options: dict, returns: dict) -> type:
     """Return a unique TerribleTaskBase subclass for an Ansible task type."""
     rname = _resource_name_for(fqcn)
-    schema = Schema(attributes=_FRAMEWORK_ATTRS + _options_to_attrs(options))
+    schema, return_names = _build_schema(options, returns)
     return type(
         f"Terrible_{rname}",
         (TerribleTaskBase,),
         {
             "_module_name": fqcn,
             "_schema": schema,
+            "_return_attr_names": return_names,
             "get_name": classmethod(lambda cls, _n=rname: _n),
         },
     )
@@ -136,7 +163,7 @@ def make_task_class(fqcn: str, options: dict) -> type:
 def discover_task_resources() -> list[type]:
     """
     Walk all Ansible module paths and return one Resource subclass per
-    discovered task type, with schema built from each module's DOCUMENTATION.
+    discovered task type.
     """
     try:
         from ansible.plugins.loader import module_loader
@@ -156,13 +183,21 @@ def discover_task_resources() -> list[type]:
             continue
         seen_fqcns.add(fqcn)
 
-        doc = _parse_documentation(path)
+        try:
+            with open(path, encoding="utf-8", errors="replace") as f:
+                source = f.read()
+        except OSError:
+            continue
+
+        doc = _parse_yaml_block(source, _DOC_RE)
         if doc is None:
             continue
 
         options = doc.get("options") or {}
+        returns = _parse_yaml_block(source, _RET_RE) or {}
+
         try:
-            klass = make_task_class(fqcn, options)
+            klass = make_task_class(fqcn, options, returns)
             resources.append(klass)
             log.debug("Registered task type: %s", fqcn)
         except Exception as exc:

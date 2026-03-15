@@ -66,6 +66,7 @@ class TerribleTaskBase(Resource):
 
     _module_name: str = ""
     _schema = None
+    _return_attr_names: set[str] = set()
 
     def __init__(self, provider):
         self._prov = provider
@@ -75,7 +76,8 @@ class TerribleTaskBase(Resource):
         return cls._schema
 
     def plan(self, ctx: PlanContext, current: Optional[dict], planned: dict) -> Optional[dict]:
-        return {**planned, "result": Unknown, "changed": Unknown}
+        unknown_outputs = {name: Unknown for name in self.__class__._return_attr_names}
+        return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
 
     def _resolve_host(self, host_id: str, diags) -> Optional[dict]:
         h = self._prov._state.get(host_id)
@@ -104,12 +106,19 @@ class TerribleTaskBase(Resource):
         changed = bool(result.get("changed", False))
         if result.get("failed") or result.get("unreachable"):
             diags.add_error("Ansible task failed", result.get("msg", "unknown error"))
-        return result, changed
+
+        # Unpack individual return attributes from the result
+        return_attrs = {
+            name: result[name]
+            for name in self.__class__._return_attr_names
+            if name in result
+        }
+        return result, changed, return_attrs
 
     def create(self, ctx: CreateContext, planned: dict) -> Optional[dict]:
-        result, changed = self._execute(ctx.diagnostics, planned)
+        result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
         new_id = uuid.uuid4().hex
-        state = {**planned, "id": new_id, "result": result, "changed": changed}
+        state = {**planned, **return_attrs, "id": new_id, "result": result, "changed": changed}
         self._prov._state[new_id] = state
         self._prov._save_state()
         return state
@@ -118,9 +127,9 @@ class TerribleTaskBase(Resource):
         return self._prov._state.get(current["id"])
 
     def update(self, ctx: UpdateContext, current: dict, planned: dict) -> Optional[dict]:
-        result, changed = self._execute(ctx.diagnostics, planned)
+        result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
         rid = current["id"]
-        state = {**planned, "id": rid, "result": result, "changed": changed}
+        state = {**planned, **return_attrs, "id": rid, "result": result, "changed": changed}
         self._prov._state[rid] = state
         self._prov._save_state()
         return state
