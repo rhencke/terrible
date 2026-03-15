@@ -14,6 +14,7 @@ Usage:
   TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -v
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -72,6 +73,20 @@ def test_case(case_dir, tmp_path, provider_install):
         # --- Assert: side effects landed on the host ---
         print(f"[{name}] verify.sh", flush=True)
         _run_script(case_dir, "verify.sh", check=True)
+
+        # --- Assert: terraform outputs match expected values ---
+        expected_file = case_dir / "expected_outputs.json"
+        if expected_file.exists():
+            expected = json.loads(expected_file.read_text())
+            raw = subprocess.run(
+                [tf_bin, "output", "-json", "-no-color"],
+                cwd=str(ws), env=tf_env, check=True, capture_output=True, text=True,
+            )
+            actual = {k: v["value"] for k, v in json.loads(raw.stdout).items()}
+            for key, want in expected.items():
+                assert actual.get(key) == want, (
+                    f"[{name}] output {key!r}: expected {want!r}, got {actual.get(key)!r}"
+                )
 
         # --- Assert: no drift on a second plan ---
         result = _tf("plan (idempotency)", [tf_bin, "plan", "-detailed-exitcode", "-no-color",

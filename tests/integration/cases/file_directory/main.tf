@@ -24,4 +24,5 @@ resource "terrible_file" "test_dir" {
   state   = "directory"
 }
 
-output "path" { value = terrible_file.test_dir.path }
+output "path"    { value = terrible_file.test_dir.path }
+output "changed" { value = terrible_file.test_dir.changed }

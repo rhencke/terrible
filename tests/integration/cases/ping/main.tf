@@ -23,3 +23,4 @@ resource "terrible_ping" "check" {
 }
 
 output "ping_result" { value = terrible_ping.check.ping }
+output "changed"     { value = terrible_ping.check.changed }
