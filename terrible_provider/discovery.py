@@ -52,12 +52,27 @@ _FRAMEWORK_ATTRS = [
     ),
     Attribute("result", NormalizedJson(), description="Full raw JSON result from Ansible", computed=True),
     Attribute("changed", Bool(), description="Whether the task reported a change", computed=True),
+    Attribute(
+        "triggers",
+        NormalizedJson(),
+        description="Arbitrary map of values; any change triggers task re-execution",
+        optional=True,
+    ),
 ]
 
 _FRAMEWORK_NAMES = {a.name for a in _FRAMEWORK_ATTRS}
 
 _DOC_RE = re.compile(r'^DOCUMENTATION\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
 _RET_RE = re.compile(r'^RETURN\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
+
+
+def _check_mode_support(doc: dict) -> str:
+    """Return 'full', 'partial', or 'none' from DOCUMENTATION attributes block."""
+    return (
+        doc.get("attributes", {})
+           .get("check_mode", {})
+           .get("support", "none")
+    )
 
 
 def _fqcn_for_path(path: str) -> Optional[str]:
@@ -144,7 +159,7 @@ def _resource_name_for(fqcn: str) -> str:
     return fqcn.replace(".", "_").replace("-", "_")
 
 
-def make_task_class(fqcn: str, options: dict, returns: dict) -> type:
+def make_task_class(fqcn: str, options: dict, returns: dict, check_mode_support: str = "none") -> type:
     """Return a unique TerribleTaskBase subclass for an Ansible task type."""
     rname = _resource_name_for(fqcn)
     schema, return_names = _build_schema(options, returns)
@@ -155,6 +170,7 @@ def make_task_class(fqcn: str, options: dict, returns: dict) -> type:
             "_module_name": fqcn,
             "_schema": schema,
             "_return_attr_names": return_names,
+            "_check_mode_support": check_mode_support,
             "get_name": classmethod(lambda cls, _n=rname: _n),
         },
     )
@@ -195,9 +211,10 @@ def discover_task_resources() -> list[type]:
 
         options = doc.get("options") or {}
         returns = _parse_yaml_block(source, _RET_RE) or {}
+        support = _check_mode_support(doc)
 
         try:
-            klass = make_task_class(fqcn, options, returns)
+            klass = make_task_class(fqcn, options, returns, check_mode_support=support)
             resources.append(klass)
             log.debug("Registered task type: %s", fqcn)
         except Exception as exc:

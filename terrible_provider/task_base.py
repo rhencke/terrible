@@ -18,7 +18,7 @@ def _ansible_bin() -> str:
     return candidate if os.path.exists(candidate) else "ansible"
 
 
-def _run_module(host_state: dict, module: str, args: Optional[str]) -> dict:
+def _run_module(host_state: dict, module: str, args: Optional[str], *, check_only: bool = False) -> dict:
     """Run an Ansible module ad-hoc against a host via CLI, returning the result dict."""
     tmpdir = tempfile.mkdtemp()
     try:
@@ -41,6 +41,8 @@ def _run_module(host_state: dict, module: str, args: Optional[str]) -> dict:
         os.makedirs(results_dir)
 
         cmd = [_ansible_bin(), "target", "-i", inv_path, "-m", module, "--tree", results_dir]
+        if check_only:
+            cmd += ["--check", "--diff"]
         if args:
             cmd += ["-a", args]
 
@@ -67,6 +69,7 @@ class TerribleTaskBase(Resource):
     _module_name: str = ""
     _schema = None
     _return_attr_names: set[str] = set()
+    _check_mode_support: str = "none"
 
     def __init__(self, provider):
         self._prov = provider
@@ -94,7 +97,7 @@ class TerribleTaskBase(Resource):
             return {}, False
 
         # Collect module args from planned state (exclude framework fields)
-        skip = {"id", "host_id", "result", "changed"}
+        skip = {"id", "host_id", "result", "changed", "triggers"}
         args_parts = [
             f"{k}={v}"
             for k, v in planned.items()
@@ -123,8 +126,45 @@ class TerribleTaskBase(Resource):
         self._prov._save_state()
         return state
 
+    def _execute_check(self, diags, current: dict) -> Optional[dict]:
+        """Run module in check+diff mode against stored state. Returns raw result or None on host error."""
+        host = self._resolve_host(current["host_id"], diags)
+        if host is None:
+            return None
+        skip = {"id", "host_id", "result", "changed", "triggers"}
+        args_parts = [f"{k}={v}" for k, v in current.items() if k not in skip and v is not None]
+        args_str = " ".join(args_parts) or None
+        return _run_module(host, self.__class__._module_name, args_str, check_only=True)
+
     def read(self, ctx: ReadContext, current: dict) -> Optional[dict]:
-        return self._prov._state.get(current["id"])
+        stored = self._prov._state.get(current["id"])
+        if stored is None:
+            return None
+
+        if self.__class__._check_mode_support != "full":
+            return stored  # input-hash idempotency only
+
+        result = self._execute_check(ctx.diagnostics, stored)
+        if result is None:
+            return stored  # host error — don't signal deletion
+
+        if result.get("failed") or result.get("unreachable"):
+            ctx.diagnostics.add_warning(
+                "Ansible check mode failed during refresh",
+                result.get("msg", "unknown error"),
+            )
+            return stored
+
+        if not result.get("changed", False):
+            return stored  # up to date, no drift
+
+        # Drift detected — clear computed outputs so Terraform plans an update()
+        drift_state = dict(stored)
+        drift_state["result"] = None
+        drift_state["changed"] = None
+        for name in self.__class__._return_attr_names:
+            drift_state[name] = None
+        return drift_state
 
     def update(self, ctx: UpdateContext, current: dict, planned: dict) -> Optional[dict]:
         result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
