@@ -2,19 +2,20 @@
 Integration test fixtures — run against the native host (no VMs).
 
 Session-scoped:
-  provider_install — installs the dev-mode provider binary into a tmp plugin
-                     dir and writes a .terraformrc filesystem_mirror so
-                     tofu init resolves the provider locally (no network).
-
-The provider binary used is the editable-install entrypoint from the project
-venv (.venv/bin/terraform-provider-terrible), so no separate build step is
-needed — just 'uv sync' (or 'pip install -e .').
+  provider_process — starts the provider in --dev (reattach) mode once per
+                     session; dev mode uses insecure gRPC so there is no TLS
+                     overhead and no per-command provider process spawn.
+  provider_install — installs the provider into a filesystem mirror for
+                     'tofu init', and exposes TF_REATTACH_PROVIDERS so all
+                     subsequent terraform commands reuse the live process.
 
 Prerequisites:
   tofu or terraform on PATH
   uv sync (or pip install -e .) already run
 """
 
+import os
+import re as _re
 import shutil
 import subprocess
 from pathlib import Path
@@ -28,6 +29,7 @@ PROVIDER_TYPE = "terrible"
 PROVIDER_VERSION = "0.0.1"
 
 _PROVIDER_ENTRYPOINT = REPO_ROOT / ".venv" / "bin" / "terraform-provider-terrible"
+_REATTACH_RE = _re.compile(r"TF_REATTACH_PROVIDERS='(.+)'")
 
 
 def _find_tf() -> str:
@@ -38,17 +40,58 @@ def _find_tf() -> str:
 
 
 @pytest.fixture(scope="session")
-def provider_install(tmp_path_factory):
+def provider_process():
     """
-    Install the dev provider into a filesystem mirror directory and write a
-    .terraformrc pointing at it so tofu init works offline.
-    """
-    from tf.runner import install_provider
+    Start the provider in --dev mode and capture TF_REATTACH_PROVIDERS.
 
+    Dev mode uses an insecure gRPC socket (no TLS) and keeps the provider
+    process alive across all terraform commands in the session, eliminating
+    per-command Python startup (~340ms each).
+    """
     assert _PROVIDER_ENTRYPOINT.exists(), (
         f"Provider entrypoint not found: {_PROVIDER_ENTRYPOINT}\n"
         "Run 'uv sync' or 'pip install -e .' first."
     )
+
+    env = {**os.environ, "PYTHONUNBUFFERED": "1"}
+    proc = subprocess.Popen(
+        [str(_PROVIDER_ENTRYPOINT), "--dev"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        env=env,
+    )
+
+    reattach = None
+    for _ in range(30):
+        line = proc.stdout.readline()
+        if not line:
+            break
+        m = _REATTACH_RE.search(line)
+        if m:
+            reattach = m.group(1)
+            break
+
+    if not reattach:
+        proc.kill()
+        proc.wait()
+        raise RuntimeError("Provider did not emit TF_REATTACH_PROVIDERS within expected output")
+
+    print(f"\n[setup] Provider PID={proc.pid} started in dev/reattach mode", flush=True)
+    yield reattach
+    proc.kill()
+    proc.wait()
+
+
+@pytest.fixture(scope="session")
+def provider_install(tmp_path_factory, provider_process):
+    """
+    Install the provider binary into a filesystem mirror directory and write a
+    .terraformrc pointing at it so tofu init works offline.
+
+    Also exposes TF_REATTACH_PROVIDERS so test commands reuse the live process.
+    """
+    from tf.runner import install_provider
 
     plugin_dir = tmp_path_factory.mktemp("plugins")
     print(f"\n[setup] Installing provider from {_PROVIDER_ENTRYPOINT}", flush=True)
@@ -76,4 +119,9 @@ def provider_install(tmp_path_factory):
 
     tf_bin = _find_tf()
     print(f"[setup] Using terraform binary: {tf_bin}", flush=True)
-    return {"plugin_dir": plugin_dir, "tfrc": tfrc, "tf_bin": tf_bin}
+    return {
+        "plugin_dir": plugin_dir,
+        "tfrc": tfrc,
+        "tf_bin": tf_bin,
+        "reattach_json": provider_process,
+    }

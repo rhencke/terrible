@@ -1,11 +1,8 @@
 """Base class for dynamically-generated Ansible module resources."""
 
 import json
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
+import signal as _signal
+import threading
 import uuid
 from typing import Optional
 
@@ -13,64 +10,151 @@ from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, Delete
 from tf.types import Unknown
 
 
-def _ansible_bin() -> str:
-    candidate = os.path.join(os.path.dirname(sys.executable), "ansible")
-    return candidate if os.path.exists(candidate) else "ansible"
-
-
 _MODULE_TIMEOUT = 300  # seconds before an Ansible run is considered hung
 
+# ---------------------------------------------------------------------------
+# One-time Ansible in-process initialisation
+# ---------------------------------------------------------------------------
+
+def _ensure_collection_finder():
+    """Install AnsibleCollectionFinder so FQCN modules resolve in-process."""
+    try:
+        from ansible.utils.collection_loader._collection_finder import (
+            _AnsibleCollectionFinder, AnsibleCollectionConfig,
+        )
+        if AnsibleCollectionConfig.collection_finder is None:
+            _AnsibleCollectionFinder(paths=[])._install()
+    except ImportError:
+        pass
+
+_ensure_collection_finder()
+
+_ansible_init_lock = threading.Lock()
+_ansible_initialized = False
+
+
+def _ensure_ansible_initialized():
+    global _ansible_initialized
+    if _ansible_initialized:
+        return
+    with _ansible_init_lock:
+        if _ansible_initialized:
+            return
+        from ansible import context
+        from ansible.utils.context_objects import CLIArgs
+        context.CLIARGS = CLIArgs({
+            'module_path': None, 'forks': 1, 'become': False,
+            'become_method': None, 'become_user': None,
+            'check': False, 'diff': False, 'timeout': _MODULE_TIMEOUT,
+            'connection': 'ssh', 'verbosity': 0,
+            'private_key_file': None, 'remote_user': None,
+            'start_at_task': None, 'task_timeout': 0,
+        })
+        _ansible_initialized = True
+
+
+_run_module_lock = threading.Lock()  # TQM is not thread-safe; serialise all calls
+
+
+# ---------------------------------------------------------------------------
+# Core execution
+# ---------------------------------------------------------------------------
 
 def _run_module(host_state: dict, module: str, args: Optional[str], *, check_only: bool = False) -> dict:
-    """Run an Ansible module ad-hoc against a host via CLI, returning the result dict."""
-    tmpdir = tempfile.mkdtemp()
-    try:
-        host = host_state["host"]
-        port = int(host_state.get("port") or 22)
-        user = host_state.get("user")
-        key = host_state.get("private_key_path")
-        connection = host_state.get("connection")
+    """Run an Ansible module in-process via TaskQueueManager."""
+    _ensure_ansible_initialized()
 
-        inv_line = f"{host} ansible_port={port}"
+    from ansible.parsing.dataloader import DataLoader
+    from ansible.inventory.manager import InventoryManager
+    from ansible.vars.manager import VariableManager
+    from ansible.playbook.play import Play
+    from ansible.executor.task_queue_manager import TaskQueueManager
+    from ansible.plugins.callback import CallbackBase
+
+    host = host_state["host"]
+    port = int(host_state.get("port") or 22)
+    user = host_state.get("user")
+    key = host_state.get("private_key_path")
+    connection = host_state.get("connection")
+    args_dict = json.loads(args) if args else {}
+
+    class _CB(CallbackBase):
+        result = None
+        _implemented_callback_methods = frozenset({
+            'v2_runner_on_ok', 'v2_runner_on_failed', 'v2_runner_on_unreachable',
+        })
+
+        def v2_runner_on_ok(self, r):
+            self.result = dict(r.result)
+
+        def v2_runner_on_failed(self, r, ignore_errors=False):
+            self.result = dict(r.result)
+
+        def v2_runner_on_unreachable(self, r):
+            self.result = {'unreachable': True, **dict(r.result)}
+
+    with _run_module_lock:
+        # Ansible's TQM calls signal.signal() internally, which fails in non-main
+        # threads (gRPC worker threads).  Patch it to a no-op for the duration;
+        # _run_module_lock ensures no other caller is affected concurrently.
+        _in_main = threading.current_thread() is threading.main_thread()
+        if not _in_main:
+            _real_signal = _signal.signal
+            _signal.signal = lambda *a, **kw: None  # type: ignore[method-assign]
+
+        loader = DataLoader()
+        inv    = InventoryManager(loader=loader, sources='target,')
+        hobj   = inv.get_host('target')
+        hobj.vars['ansible_host'] = host
+        hobj.vars['ansible_port'] = port
         if connection:
-            inv_line += f" ansible_connection={connection}"
+            hobj.vars['ansible_connection'] = connection
         if user:
-            inv_line += f" ansible_user={user}"
+            hobj.vars['ansible_user'] = user
         if key:
-            inv_line += f" ansible_ssh_private_key_file={key}"
-        if connection != "local":
-            inv_line += " ansible_ssh_extra_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+            hobj.vars['ansible_ssh_private_key_file'] = key
+        if connection != 'local':
+            hobj.vars['ansible_ssh_extra_args'] = (
+                '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            )
 
-        inv_path = os.path.join(tmpdir, "inventory")
-        with open(inv_path, "w") as f:
-            f.write(f"[target]\n{inv_line}\n")
+        vm  = VariableManager(loader=loader, inventory=inv)
+        cb  = _CB()
+        play = Play().load(dict(
+            name='terrible_task', hosts='target', gather_facts='no',
+            check_mode=check_only, diff=check_only,
+            tasks=[dict(action=module, args=args_dict)],
+        ), variable_manager=vm, loader=loader)
 
-        results_dir = os.path.join(tmpdir, "results")
-        os.makedirs(results_dir)
-
-        cmd = [_ansible_bin(), "target", "-i", inv_path, "-m", module, "--tree", results_dir]
-        if check_only:
-            cmd += ["--check", "--diff"]
-        if args:
-            cmd += ["-a", args]
-
+        tqm = None
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=_MODULE_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            return {"failed": True, "msg": f"Ansible module timed out after {_MODULE_TIMEOUT}s"}
+            tqm = TaskQueueManager(
+                inventory=inv,
+                variable_manager=vm,
+                loader=loader,
+                passwords={},
+                stdout_callback_name='minimal',
+                run_additional_callbacks=False,
+                forks=1,
+            )
+            tqm.load_callbacks()
+            tqm._callback_plugins.append(cb)
+            tqm.run(play)
+        except Exception as exc:
+            return {"failed": True, "msg": f"Ansible in-process error: {exc}"}
+        finally:
+            if tqm:
+                tqm.cleanup()
+            loader.cleanup_all_tmp_files()
+            if not _in_main:
+                _signal.signal = _real_signal  # type: ignore[method-assign]
 
-        files = os.listdir(results_dir)
-        if files:
-            try:
-                with open(os.path.join(results_dir, files[0])) as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, OSError) as exc:
-                return {"failed": True, "msg": f"Could not parse Ansible result: {exc}"}
+    return cb.result or {"failed": True, "msg": "No result captured from Ansible"}
 
-        return {"failed": True, "msg": proc.stderr or proc.stdout}
-    finally:
-        shutil.rmtree(tmpdir, ignore_errors=True)
 
+# ---------------------------------------------------------------------------
+# Resource base class
+# ---------------------------------------------------------------------------
 
 class TerribleTaskBase(Resource):
     """

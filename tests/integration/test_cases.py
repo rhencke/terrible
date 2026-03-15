@@ -49,7 +49,13 @@ def _tf(label: str, args: list[str], *, ws: Path, env: dict, check: bool = True)
 @pytest.mark.parametrize("case_dir", _cases, ids=[d.name for d in _cases])
 def test_case(case_dir, tmp_path, provider_install):
     tf_bin = provider_install["tf_bin"]
-    tf_env = {**os.environ, "TF_CLI_CONFIG_FILE": str(provider_install["tfrc"])}
+    tf_env = {
+        **os.environ,
+        "TF_CLI_CONFIG_FILE": str(provider_install["tfrc"]),
+        "TF_REATTACH_PROVIDERS": provider_install["reattach_json"],
+    }
+    # init doesn't call ConfigureProvider; strip reattach to avoid edge cases
+    tf_env_init = {k: v for k, v in tf_env.items() if k != "TF_REATTACH_PROVIDERS"}
     state_file = str(tmp_path / "terrible.json")
     name = case_dir.name
 
@@ -63,7 +69,7 @@ def test_case(case_dir, tmp_path, provider_install):
     print(f"[{name}] cleanup (pre)", flush=True)
     _run_script(case_dir, "cleanup.sh")
 
-    _tf("init", [tf_bin, "init", "-no-color"], ws=ws, env=tf_env)
+    _tf("init", [tf_bin, "init", "-no-color"], ws=ws, env=tf_env_init)
 
     try:
         # --- Act ---
