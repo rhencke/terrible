@@ -66,4 +66,12 @@ class TerribleTaskDataSource(DataSource):
             name: coercers[name](result.get(name)) if name in coercers else result.get(name)
             for name in self.__class__._return_attr_names
         }
-        return {**config, **return_attrs, "result": result}
+
+        # Unlike resources, ReadDataSource bypasses _encode_state, so NormalizedJson
+        # attributes must be pre-encoded as JSON strings before returning.
+        attr_map = {a.name: a for a in self.__class__._schema.attributes}
+        state = {**config, **return_attrs, "result": result}
+        return {
+            k: attr_map[k].type.encode(v) if k in attr_map and v not in (None, Unknown) else v
+            for k, v in state.items()
+        }
