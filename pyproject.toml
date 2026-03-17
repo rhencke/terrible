@@ -26,7 +26,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=terrible_provider --cov-report=term-missing --cov-fail-under=95"
+addopts = "--cov=terrible_provider --cov-report=term-missing --cov-fail-under=100"
 testpaths = ["tests"]
 
 [tool.coverage.run]

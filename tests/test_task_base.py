@@ -380,6 +380,61 @@ class TestEnsureAnsibleInitialized:
         _ensure_ansible_initialized()
         assert tb._ansible_initialized is True
 
+    def test_double_checked_locking_inner_guard(self):
+        """Cover the inner 'if _ansible_initialized: return' inside the lock.
+
+        Strategy: pre-acquire the lock so a background thread blocks on it after
+        passing the outer check (which sees False).  Then set the flag to True
+        and release — the thread acquires the lock, finds True on the inner
+        check, and returns early, hitting line 42.
+        """
+        import terrible_provider.task_base as tb
+
+        class _ControlledLock:
+            """Drop-in lock whose inner mutex we can hold from the test thread."""
+            def __init__(self):
+                self._inner = threading.Lock()
+                self.waiting = threading.Event()
+
+            def acquire(self, *a, **kw):
+                self.waiting.set()          # signal: thread is about to block
+                return self._inner.acquire(*a, **kw)
+
+            def release(self):
+                self._inner.release()
+
+            def __enter__(self):
+                self.acquire()
+                return self
+
+            def __exit__(self, *a):
+                self.release()
+
+        orig_init = tb._ansible_initialized
+        orig_lock = tb._ansible_init_lock
+        controlled = _ControlledLock()
+        controlled._inner.acquire()         # hold the lock before the thread starts
+        tb._ansible_init_lock = controlled
+        tb._ansible_initialized = False
+
+        done = threading.Event()
+
+        def _run():
+            _ensure_ansible_initialized()   # outer check False → tries to acquire → blocks
+            done.set()
+
+        t = threading.Thread(target=_run)
+        try:
+            t.start()
+            controlled.waiting.wait(timeout=2)  # thread is now blocked on acquire()
+            tb._ansible_initialized = True      # set flag while thread can't see yet
+            controlled._inner.release()         # unblock thread → inner check sees True
+            assert done.wait(timeout=2), "thread did not finish"
+        finally:
+            tb._ansible_init_lock = orig_lock
+            tb._ansible_initialized = orig_init
+            t.join()
+
 
 # ---------------------------------------------------------------------------
 # _make_callback
