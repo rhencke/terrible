@@ -49,7 +49,16 @@ class TerribleTaskDataSource(DataSource):
             )
             return None
 
-        args = {k: v for k, v in config.items()
+        # config arrives with NormalizedJson values as JSON strings (Terraform's wire
+        # format). Decode them back to Python objects before passing to Ansible, which
+        # expects dicts/lists, not JSON strings.
+        attr_map = {a.name: a for a in self.__class__._schema.attributes}
+        decoded_config = {
+            k: attr_map[k].type.decode(v) if k in attr_map and v not in (None, Unknown) else v
+            for k, v in config.items()
+        }
+
+        args = {k: v for k, v in decoded_config.items()
                 if k not in _DS_SKIP_ATTRS and v not in (None, Unknown)}
         args_str = json.dumps(args) if args else None
 
@@ -69,7 +78,6 @@ class TerribleTaskDataSource(DataSource):
 
         # Unlike resources, ReadDataSource bypasses _encode_state, so NormalizedJson
         # attributes must be pre-encoded as JSON strings before returning.
-        attr_map = {a.name: a for a in self.__class__._schema.attributes}
         state = {**config, **return_attrs, "result": result}
         return {
             k: attr_map[k].type.encode(v) if k in attr_map and v not in (None, Unknown) else v
