@@ -17,7 +17,7 @@ class TerribleProvider(Provider):
     def __init__(self):
         self._state_file = Path("terrible_state.json")
         self._state: dict[str, dict] = {}
-        self._task_resources = discover_task_resources()
+        self._task_resources, self._task_datasources = discover_task_resources()
 
     def _load_state(self):
         if self._state_file.exists():
@@ -59,7 +59,7 @@ class TerribleProvider(Provider):
         self._load_state()
 
     def get_data_sources(self) -> list:
-        return []
+        return self._task_datasources
 
     def get_resources(self) -> list:
         return [TerribleHost, *self._task_resources]

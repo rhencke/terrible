@@ -23,6 +23,7 @@ from tf.schema import Schema, Attribute
 from tf.types import Bool, NormalizedJson, Number, String
 
 from .task_base import TerribleTaskBase
+from .task_datasource import TerribleTaskDataSource
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,18 @@ _FRAMEWORK_ATTRS = [
 ]
 
 _FRAMEWORK_NAMES = {a.name for a in _FRAMEWORK_ATTRS}
+
+# Data source framework attributes — no id/triggers/changed; just host_id and result
+_DS_FRAMEWORK_ATTRS = [
+    Attribute(
+        "host_id",
+        String(),
+        description="ID of the `terrible_host` to run this data source against",
+        required=True,
+    ),
+    Attribute("result", NormalizedJson(), description="Full raw JSON result from Ansible", computed=True),
+]
+_DS_FRAMEWORK_NAMES = {a.name for a in _DS_FRAMEWORK_ATTRS}
 
 _DOC_RE = re.compile(r'^DOCUMENTATION\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
 _RET_RE = re.compile(r'^RETURN\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
@@ -226,6 +239,60 @@ def make_task_class(fqcn: str, options: dict, returns: dict, check_mode_support:
     )
 
 
+def _build_datasource_schema(options: dict, returns: dict) -> tuple[Schema, set[str]]:
+    """Like _build_schema but for data sources: uses _DS_FRAMEWORK_ATTRS, no id/triggers/changed."""
+    option_names = set(options)
+    return_names = {k for k in returns if k not in _DS_FRAMEWORK_NAMES and k not in option_names}
+
+    attrs: list[Attribute] = list(_DS_FRAMEWORK_ATTRS)
+
+    for name, spec in options.items():
+        if name in _DS_FRAMEWORK_NAMES or not isinstance(spec, dict):
+            continue
+        required = bool(spec.get("required", False))
+        attrs.append(
+            Attribute(
+                name,
+                _tf_type_for(spec.get("type", "str")),
+                description=_description(spec),
+                required=required,
+                optional=not required,
+            )
+        )
+
+    for name, spec in returns.items():
+        if name in _DS_FRAMEWORK_NAMES or name in option_names or not isinstance(spec, dict):
+            continue
+        attrs.append(
+            Attribute(
+                name,
+                _tf_type_for(spec.get("type", "str")),
+                description=_description(spec),
+                computed=True,
+            )
+        )
+
+    return Schema(attributes=attrs), return_names
+
+
+def make_datasource_class(fqcn: str, options: dict, returns: dict) -> type:
+    """Return a unique TerribleTaskDataSource subclass for an Ansible task type."""
+    rname = _resource_name_for(fqcn)
+    schema, return_names = _build_datasource_schema(options, returns)
+    coercers = _coercers_for(schema, return_names)
+    return type(
+        f"TerribleDS_{rname}",
+        (TerribleTaskDataSource,),
+        {
+            "_module_name": fqcn,
+            "_schema": schema,
+            "_return_attr_names": return_names,
+            "_return_attr_coercers": coercers,
+            "get_name": _make_get_name(rname),
+        },
+    )
+
+
 def _cache_db_path() -> Path:
     cache_dir = Path.home() / ".cache" / "tf-python-provider"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -248,7 +315,7 @@ def _open_cache() -> sqlite3.Connection:
     return db
 
 
-def _load_cached(db: sqlite3.Connection, ansible_version: str) -> Optional[list[type]]:
+def _load_cached(db: sqlite3.Connection, ansible_version: str) -> Optional[tuple[list[type], list[type]]]:
     rows = db.execute(
         "SELECT fqcn, options_json, returns_json, check_mode FROM discovery_cache WHERE ansible_version = ?",
         (ansible_version,),
@@ -256,13 +323,18 @@ def _load_cached(db: sqlite3.Connection, ansible_version: str) -> Optional[list[
     if not rows:
         return None
     resources = []
+    datasources = []
     for fqcn, options_json, returns_json, check_mode in rows:
         try:
-            klass = make_task_class(fqcn, json.loads(options_json), json.loads(returns_json), check_mode)
+            options = json.loads(options_json)
+            returns = json.loads(returns_json)
+            klass = make_task_class(fqcn, options, returns, check_mode)
             resources.append(klass)
+            if check_mode == "full":
+                datasources.append(make_datasource_class(fqcn, options, returns))
         except Exception as exc:
             log.debug("Failed to restore cached class for %s: %s", fqcn, exc)
-    return resources
+    return resources, datasources
 
 
 def _save_cache(db: sqlite3.Connection, ansible_version: str, rows: list[tuple]) -> None:
@@ -275,10 +347,12 @@ def _save_cache(db: sqlite3.Connection, ansible_version: str, rows: list[tuple])
     db.commit()
 
 
-def discover_task_resources() -> list[type]:
+def discover_task_resources() -> tuple[list[type], list[type]]:
     """
-    Walk all Ansible module paths and return one Resource subclass per
-    discovered task type.
+    Walk all Ansible module paths and return (resources, datasources).
+
+    resources   — one Resource subclass per discovered task type
+    datasources — one DataSource subclass for each module with check_mode == "full"
 
     Results are cached in SQLite (~/.cache/tf-python-provider/discovery.db)
     keyed by Ansible version, so the expensive filesystem walk and YAML
@@ -289,7 +363,7 @@ def discover_task_resources() -> list[type]:
         from ansible.plugins.loader import module_loader
     except ImportError:
         log.warning("ansible not importable; no task resources will be registered")
-        return []
+        return [], []
 
     ansible_version = ansible.__version__
 
@@ -298,8 +372,12 @@ def discover_task_resources() -> list[type]:
         db = _open_cache()
         cached = _load_cached(db, ansible_version)
         if cached is not None:
-            log.info("Loaded %d Ansible task types from cache (ansible %s)", len(cached), ansible_version)
-            return cached
+            resources, datasources = cached
+            log.info(
+                "Loaded %d Ansible task types (%d data sources) from cache (ansible %s)",
+                len(resources), len(datasources), ansible_version,
+            )
+            return resources, datasources
     except Exception as exc:
         log.debug("Discovery cache unavailable: %s", exc)
         if db is not None:
@@ -311,6 +389,7 @@ def discover_task_resources() -> list[type]:
 
     # Cache miss — do the full filesystem walk.
     resources: list[type] = []
+    datasources: list[type] = []
     cache_rows: list[tuple] = []
     seen_fqcns: set[str] = set()
 
@@ -343,10 +422,13 @@ def discover_task_resources() -> list[type]:
                 resources.append(klass)
                 cache_rows.append((ansible_version, fqcn, json.dumps(options), json.dumps(returns), support))
                 log.debug("Registered task type: %s", fqcn)
+                if support == "full":
+                    datasources.append(make_datasource_class(fqcn, options, returns))
+                    log.debug("Registered data source type: %s", fqcn)
             except Exception as exc:
                 log.debug("Failed to build class for %s: %s", fqcn, exc)
 
-        log.info("Discovered %d Ansible task types", len(resources))
+        log.info("Discovered %d Ansible task types (%d data sources)", len(resources), len(datasources))
 
         if db is not None and cache_rows:
             try:
@@ -361,4 +443,4 @@ def discover_task_resources() -> list[type]:
             except Exception:
                 pass
 
-    return resources
+    return resources, datasources
