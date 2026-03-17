@@ -4,7 +4,15 @@
 # same time.  Because the two hosts share no dependency, Terraform will apply
 # tasks on both hosts concurrently — no extra configuration needed.
 #
-# Replace the host/connection values with real SSH targets and a private key.
+# This example uses localhost twice (different work directories) to demonstrate
+# the pattern locally.  In production, replace the hosts with real SSH targets
+# and a private key:
+#
+#   resource "terrible_host" "web1" {
+#     host             = "10.0.0.1"
+#     user             = "deploy"
+#     private_key_path = "~/.ssh/id_ed25519"
+#   }
 #
 # Run with:
 #   tofu apply -var="state_file=/tmp/parallel_state.json"
@@ -30,41 +38,41 @@ provider "terrible" {
 # --- Hosts -------------------------------------------------------------------
 
 resource "terrible_host" "web1" {
-  host             = "10.0.0.1"
-  user             = "deploy"
-  private_key_path = "~/.ssh/id_ed25519"
+  host       = "127.0.0.1"
+  connection = "local"
 }
 
 resource "terrible_host" "web2" {
-  host             = "10.0.0.2"
-  user             = "deploy"
-  private_key_path = "~/.ssh/id_ed25519"
+  host       = "127.0.0.1"
+  connection = "local"
 }
 
-# --- Tasks (identical on both hosts, run in parallel) ------------------------
+# --- Tasks (identical on both hosts, applied in parallel) --------------------
 
 resource "terrible_file" "app_dir_web1" {
   host_id = terrible_host.web1.id
-  path    = "/opt/myapp"
+  path    = "/tmp/terrible_web1"
   state   = "directory"
 }
 
 resource "terrible_file" "app_dir_web2" {
   host_id = terrible_host.web2.id
-  path    = "/opt/myapp"
+  path    = "/tmp/terrible_web2"
   state   = "directory"
 }
 
-resource "terrible_command" "deploy_web1" {
+resource "terrible_copy" "deploy_web1" {
   host_id = terrible_host.web1.id
-  cmd     = "cp /tmp/myapp.tar.gz /opt/myapp/ && tar -xzf /opt/myapp/myapp.tar.gz -C /opt/myapp"
+  content = "deployed\n"
+  dest    = "/tmp/terrible_web1/app.txt"
 
   depends_on = [terrible_file.app_dir_web1]
 }
 
-resource "terrible_command" "deploy_web2" {
+resource "terrible_copy" "deploy_web2" {
   host_id = terrible_host.web2.id
-  cmd     = "cp /tmp/myapp.tar.gz /opt/myapp/ && tar -xzf /opt/myapp/myapp.tar.gz -C /opt/myapp"
+  content = "deployed\n"
+  dest    = "/tmp/terrible_web2/app.txt"
 
   depends_on = [terrible_file.app_dir_web2]
 }
@@ -73,7 +81,7 @@ resource "terrible_command" "deploy_web2" {
 
 output "deploy_changed" {
   value = {
-    web1 = terrible_command.deploy_web1.changed
-    web2 = terrible_command.deploy_web2.changed
+    web1 = terrible_copy.deploy_web1.changed
+    web2 = terrible_copy.deploy_web2.changed
   }
 }

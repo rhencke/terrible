@@ -45,39 +45,49 @@ resource "terrible_host" "app" {
   connection = "local"
 }
 
-# Write the config file.  Terrible tracks whether the file content changed via
-# the `changed` output, but we also want the restart task below to fire whenever
-# the content changes — even on a second apply where the file already exists.
+# Create the working directory first
+resource "terrible_file" "workdir" {
+  host_id = terrible_host.app.id
+  path    = "/tmp/terrible_triggers"
+  state   = "directory"
+}
+
+# Write the config file.  Idempotent: only changed=true when content differs.
 resource "terrible_copy" "config" {
   host_id = terrible_host.app.id
   content = var.config_content
-  dest    = "/tmp/terrible_app/app.conf"
+  dest    = "/tmp/terrible_triggers/app.conf"
+
+  depends_on = [terrible_file.workdir]
 }
 
-# Deploy the app.  `triggers` contains the version string, so tofu will mark
-# this resource dirty — and re-run the task — whenever `app_version` changes.
-resource "terrible_command" "deploy" {
+# Deploy: write the version file.  `triggers` forces re-execution whenever
+# `app_version` changes, even if the file content would be the same.
+resource "terrible_copy" "version_file" {
   host_id = terrible_host.app.id
-  cmd     = "echo 'deploying ${var.app_version}' > /tmp/terrible_app/version.txt"
+  content = "${var.app_version}\n"
+  dest    = "/tmp/terrible_triggers/version.txt"
 
-  triggers = {
+  triggers = jsonencode({
     version = var.app_version
-  }
+  })
+
+  depends_on = [terrible_file.workdir]
 }
 
-# Restart the service when EITHER the config OR the deploy changes.
-# Referencing the `changed` output of upstream tasks in `triggers` means this
-# task only fires on applies where something actually changed.
+# Restart when EITHER the config content OR the deployed version changes.
+# `triggers` stores the *input* values (known at plan time) — when they differ
+# from the previous apply, terrible re-runs the task.
 resource "terrible_command" "restart" {
   host_id = terrible_host.app.id
-  cmd     = "echo 'restarted' >> /tmp/terrible_app/restart.log"
+  cmd     = "touch /tmp/terrible_triggers/last_restart"
 
-  triggers = {
-    config_changed = tostring(terrible_copy.config.changed)
-    deploy_changed = tostring(terrible_command.deploy.changed)
-  }
+  triggers = jsonencode({
+    config_hash = md5(var.config_content)
+    app_version = var.app_version
+  })
 
-  depends_on = [terrible_command.deploy, terrible_copy.config]
+  depends_on = [terrible_copy.config, terrible_copy.version_file]
 }
 
 output "deployed_version" {

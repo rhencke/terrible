@@ -1,0 +1,5 @@
+{
+  "ping_result": "pong",
+  "hello_changed": true,
+  "workdir_changed": true
+}

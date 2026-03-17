@@ -3,11 +3,11 @@
 # Pattern: each task depends on the previous one, forming a pipeline.
 # Terraform respects the dependency graph and runs steps in order.
 #
-# This example: create a working directory → drop a config file → run the app
-# → verify it started.  Each step only runs if the previous succeeded.
+# This example: create a working directory → drop a config file → start the app
+# → verify it is running.  Each step only runs if the previous succeeded.
 #
 # Run with:
-#   tofu apply -var="state_file=/tmp/task_chain.json"
+#   tofu apply -var="state_file=/tmp/task_chain_state.json"
 
 terraform {
   required_providers {
@@ -41,9 +41,9 @@ resource "terrible_file" "workdir" {
 
 # Step 2: write a config file — only runs after the directory exists
 resource "terrible_copy" "config" {
-  host_id  = terrible_host.app.id
-  content  = "log_level=info\nport=8080\n"
-  dest     = "/tmp/terrible_app/app.conf"
+  host_id = terrible_host.app.id
+  content = "log_level=info\nport=8080\n"
+  dest    = "/tmp/terrible_app/app.conf"
 
   depends_on = [terrible_file.workdir]
 }
@@ -51,7 +51,7 @@ resource "terrible_copy" "config" {
 # Step 3: "start" the app — runs after the config is in place
 resource "terrible_command" "start" {
   host_id = terrible_host.app.id
-  cmd     = "touch /tmp/terrible_app/app.pid"   # stand-in for a real start command
+  cmd     = "touch /tmp/terrible_app/app.pid"
 
   depends_on = [terrible_copy.config]
 }
@@ -59,7 +59,7 @@ resource "terrible_command" "start" {
 # Step 4: verify — only runs after the start command
 resource "terrible_command" "verify" {
   host_id = terrible_host.app.id
-  cmd     = "test -f /tmp/terrible_app/app.pid && echo 'app is running'"
+  cmd     = "test -f /tmp/terrible_app/app.pid"
 
   depends_on = [terrible_command.start]
 }
@@ -72,6 +72,6 @@ output "start_rc" {
   value = terrible_command.start.rc
 }
 
-output "verify_stdout" {
-  value = terrible_command.verify.stdout
+output "verify_rc" {
+  value = terrible_command.verify.rc
 }

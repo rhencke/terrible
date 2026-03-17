@@ -1,5 +1,6 @@
 """
-Integration tests against the native host — one test per cases/ subdirectory.
+Integration tests against the native host — one test per cases/ subdirectory
+and one test per example that ships a verify.sh.
 
 Pattern per case:
   Arrange — cleanup.sh wipes any prior state on the host
@@ -27,8 +28,25 @@ pytestmark = pytest.mark.skipif(
     reason="Set TERRIBLE_INTEGRATION=1 to run integration tests",
 )
 
+_REPO_ROOT = Path(__file__).parent.parent.parent
 CASES_DIR = Path(__file__).parent / "cases"
-_cases = sorted(d for d in CASES_DIR.iterdir() if d.is_dir() and (d / "main.tf").exists())
+EXAMPLES_DIR = _REPO_ROOT / "examples"
+
+
+def _collect_cases() -> list[Path]:
+    cases = sorted(
+        d for d in CASES_DIR.iterdir()
+        if d.is_dir() and (d / "main.tf").exists()
+    )
+    # Examples that ship a verify.sh are integration-testable
+    examples = sorted(
+        d for d in EXAMPLES_DIR.iterdir()
+        if d.is_dir() and (d / "main.tf").exists() and (d / "verify.sh").exists()
+    )
+    return cases + examples
+
+
+_cases = _collect_cases()
 
 
 def _run_script(case_dir: Path, name: str, *, check: bool = False) -> int:

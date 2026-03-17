@@ -7,10 +7,17 @@ terraform {
   }
 }
 
-provider "terrible" {}
+variable "state_file" {
+  description = "Path for the terrible provider state file"
+  default     = "/tmp/terraform_provider_state.json"
+}
+
+provider "terrible" {
+  state_file = var.state_file
+}
 
 resource "terrible_host" "web" {
-  host       = "localhost"
+  host       = "127.0.0.1"
   connection = "local"
 }
 
@@ -34,9 +41,13 @@ output "host_id" {
 }
 
 output "ping_result" {
-  value = terrible_ping.connectivity.result
+  value = terrible_ping.connectivity.ping
 }
 
 output "hello_changed" {
   value = terrible_command.hello.changed
+}
+
+output "workdir_changed" {
+  value = terrible_file.workdir.changed
 }
