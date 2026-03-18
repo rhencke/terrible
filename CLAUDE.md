@@ -17,7 +17,7 @@ The current implementation (`TerribleItem`) is a placeholder scaffold.
 - [`tf`](https://pypi.org/project/tf/) — Python Terraform provider framework (gRPC)
 - `ansible>=13.3.0` — Ansible runtime
 - `pytest` — testing
-- `uv` — dependency management
+- `uv` — **the only Python tool used**. No pip, poetry, pipenv, or other package managers. All commands go through `uv run`.
 
 ## Common Commands
 
