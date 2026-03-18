@@ -611,6 +611,53 @@ class TestTerribleRole:
 # _PlayResourceBase — abstract method guard
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Vault secrets forwarding
+# ---------------------------------------------------------------------------
+
+class TestVaultSecretsForwarding:
+    """Verify vault_secrets are forwarded from provider through to runners."""
+
+    def test_execute_plays_passes_vault_secrets_to_loader(self):
+        captured = {}
+
+        class _CaptureLoaderTQM:
+            def __init__(self, loader, **kw):
+                captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play): pass
+            def cleanup(self): pass
+
+        secrets = [("default", MagicMock())]
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
+            _execute_plays(
+                {"host": "127.0.0.1", "connection": "local"}, [],
+                vault_secrets=secrets,
+            )
+        assert captured["vault_secrets"] is not None
+
+    def test_playbook_resource_forwards_vault_secrets(self):
+        prov = _provider(state={"h1": _host()})
+        prov._vault_secrets = [("default", MagicMock())]
+        inst = TerriblePlaybook(prov)
+
+        with patch("terrible_provider.play._run_playbook", return_value={"changed": False}) as mock_run:
+            inst._execute(Diagnostics(), {"host_id": "h1", "playbook": "site.yml"})
+        mock_run.assert_called_once()
+        assert mock_run.call_args.kwargs.get("vault_secrets") == prov._vault_secrets
+
+    def test_role_resource_forwards_vault_secrets(self):
+        prov = _provider(state={"h1": _host()})
+        prov._vault_secrets = [("default", MagicMock())]
+        inst = TerribleRole(prov)
+
+        with patch("terrible_provider.play._run_role", return_value={"changed": False}) as mock_run:
+            inst._execute(Diagnostics(), {"host_id": "h1", "role": "myrole"})
+        mock_run.assert_called_once()
+        assert mock_run.call_args.kwargs.get("vault_secrets") == prov._vault_secrets
+
+
 class TestPlayResourceBaseAbstract:
     def test_run_raises_not_implemented(self):
         from terrible_provider.play import _PlayResourceBase

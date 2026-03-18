@@ -134,6 +134,7 @@ def _run_module(
     async_seconds: Optional[int] = None,
     poll_interval: Optional[int] = None,
     delegate_host_state: Optional[dict] = None,
+    vault_secrets: Optional[list] = None,
 ) -> dict:
     """Run an Ansible module in-process via TaskQueueManager."""
     _ensure_ansible_initialized()
@@ -168,6 +169,8 @@ def _run_module(
         })
 
         loader = DataLoader()
+        if vault_secrets:
+            loader.set_vault_secrets(vault_secrets)
         inv    = InventoryManager(loader=loader, sources='target,')
         hobj   = inv.get_host('target')
         _setup_host_inventory(hobj, host_state)
@@ -316,6 +319,7 @@ class TerribleTaskBase(Resource):
             async_seconds=planned.get("async_seconds"),
             poll_interval=planned.get("poll_interval"),
             delegate_host_state=delegate_host,
+            vault_secrets=self._prov._vault_secrets,
         )
         changed = bool(result.get("changed", False))
         if result.get("failed") or result.get("unreachable"):
@@ -346,6 +350,7 @@ class TerribleTaskBase(Resource):
             host, self.__class__._module_name, _build_args_str(current),
             check_only=True,
             timeout=current.get("timeout"),
+            vault_secrets=self._prov._vault_secrets,
         )
 
     def read(self, ctx: ReadContext, current: dict) -> Optional[dict]:

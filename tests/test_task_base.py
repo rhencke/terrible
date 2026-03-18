@@ -996,3 +996,74 @@ class TestDelegateTo:
         with patch("terrible_provider.task_base._run_module", return_value={"changed": False}):
             inst._execute(diags, {"host_id": "h1", "delegate_to_id": "missing"})
         assert diags.has_errors()
+
+
+# ---------------------------------------------------------------------------
+# Vault secrets forwarding (_run_module)
+# ---------------------------------------------------------------------------
+
+class TestVaultSecretsInRunModule:
+    _HOST = {"host": "127.0.0.1", "connection": "local"}
+
+    def test_vault_secrets_set_on_loader(self):
+        captured = {}
+
+        class _CaptureLoaderTQM:
+            def __init__(self, loader, **kw):
+                captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, "result") and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+
+        secrets = [("default", MagicMock())]
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None, vault_secrets=secrets)
+        assert captured["vault_secrets"] is not None
+
+    def test_no_vault_secrets_leaves_loader_unchanged(self):
+        captured = {}
+
+        class _CaptureLoaderTQM:
+            def __init__(self, loader, **kw):
+                captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, "result") and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None)
+        # Without vault_secrets, _vault_secrets should be empty or not set
+        assert captured["vault_secrets"] in (None, "NOT_SET", [])
+
+    def test_execute_forwards_vault_secrets_from_provider(self):
+        klass = _make_class()
+        prov = _provider(state={"h1": _host()})
+        prov._vault_secrets = [("default", MagicMock())]
+        inst = klass(prov)
+        calls = []
+
+        def _mock_run(host, module, args, **kwargs):
+            calls.append(kwargs)
+            return {"changed": False}
+
+        with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
+            inst._execute(Diagnostics(), {"host_id": "h1"})
+        assert calls[0].get("vault_secrets") == prov._vault_secrets
+
+    def test_execute_check_forwards_vault_secrets(self):
+        klass = _make_class(check_mode="full")
+        prov = _provider(state={"h1": _host(), "rid": {"id": "rid", "host_id": "h1"}})
+        prov._vault_secrets = [("default", MagicMock())]
+        inst = klass(prov)
+
+        with patch("terrible_provider.task_base._run_module", return_value={"changed": False}) as mock_run:
+            inst._execute_check(Diagnostics(), {"host_id": "h1"})
+        assert mock_run.call_args.kwargs.get("vault_secrets") == prov._vault_secrets

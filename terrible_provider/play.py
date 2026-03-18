@@ -78,6 +78,7 @@ def _execute_plays(
     timeout: Optional[int] = None,
     tags: Optional[list] = None,
     skip_tags: Optional[list] = None,
+    vault_secrets: Optional[list] = None,
 ) -> dict:
     """Run a list of play dicts in-process via TaskQueueManager."""
     from ansible.parsing.dataloader import DataLoader
@@ -105,6 +106,8 @@ def _execute_plays(
         })
 
         loader = DataLoader()
+        if vault_secrets:
+            loader.set_vault_secrets(vault_secrets)
         inv = InventoryManager(loader=loader, sources="target,")
         hobj = inv.get_host("target")
         _setup_host_inventory(hobj, host_state)
@@ -156,6 +159,7 @@ def _run_playbook(
     timeout: Optional[int] = None,
     tags: Optional[list] = None,
     skip_tags: Optional[list] = None,
+    vault_secrets: Optional[list] = None,
 ) -> dict:
     """Load a playbook YAML and run all its plays against *host_state*."""
     _ensure_ansible_initialized()
@@ -172,6 +176,7 @@ def _run_playbook(
     return _execute_plays(
         host_state, play_dicts, extra_vars,
         timeout=timeout, tags=tags, skip_tags=skip_tags,
+        vault_secrets=vault_secrets,
     )
 
 
@@ -183,6 +188,7 @@ def _run_role(
     timeout: Optional[int] = None,
     tags: Optional[list] = None,
     skip_tags: Optional[list] = None,
+    vault_secrets: Optional[list] = None,
 ) -> dict:
     """Synthesize a single-role play and run it against *host_state*."""
     _ensure_ansible_initialized()
@@ -195,6 +201,7 @@ def _run_role(
     return _execute_plays(
         host_state, [play_dict], extra_vars,
         timeout=timeout, tags=tags, skip_tags=skip_tags,
+        vault_secrets=vault_secrets,
     )
 
 
@@ -274,14 +281,14 @@ class _PlayResourceBase(Resource):
             )
         return h
 
-    def _run(self, host_state: dict, planned: dict) -> dict:
+    def _run(self, host_state: dict, planned: dict, vault_secrets=None) -> dict:
         raise NotImplementedError
 
     def _execute(self, diags, planned: dict) -> tuple[dict, bool]:
         host = self._resolve_host(planned["host_id"], diags)
         if host is None:
             return {}, False
-        result = self._run(host_state=host, planned=planned)
+        result = self._run(host_state=host, planned=planned, vault_secrets=self._prov._vault_secrets)
         changed = bool(result.get("changed", False))
         if result.get("failed") or result.get("unreachable"):
             if not planned.get("ignore_errors"):
@@ -328,7 +335,7 @@ class TerriblePlaybook(_PlayResourceBase):
     def get_name(cls):
         return "playbook"
 
-    def _run(self, host_state: dict, planned: dict) -> dict:
+    def _run(self, host_state: dict, planned: dict, vault_secrets=None) -> dict:
         return _run_playbook(
             host_state,
             planned["playbook"],
@@ -336,6 +343,7 @@ class TerriblePlaybook(_PlayResourceBase):
             timeout=planned.get("timeout"),
             tags=planned.get("tags"),
             skip_tags=planned.get("skip_tags"),
+            vault_secrets=vault_secrets,
         )
 
 
@@ -348,7 +356,7 @@ class TerribleRole(_PlayResourceBase):
     def get_name(cls):
         return "role"
 
-    def _run(self, host_state: dict, planned: dict) -> dict:
+    def _run(self, host_state: dict, planned: dict, vault_secrets=None) -> dict:
         return _run_role(
             host_state,
             planned["role"],
@@ -356,4 +364,5 @@ class TerribleRole(_PlayResourceBase):
             timeout=planned.get("timeout"),
             tags=planned.get("tags"),
             skip_tags=planned.get("skip_tags"),
+            vault_secrets=vault_secrets,
         )
