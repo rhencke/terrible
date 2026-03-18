@@ -82,9 +82,8 @@ All changes go through pull requests. Direct pushes to `main` are blocked.
 2. **Develop** — commit with pre-commit hooks passing (unit + integration tests)
 3. **Push & PR** — push branch, open a PR against `main`
 4. **CI** — unit tests (100% coverage) and integration tests must pass
-5. **Claude review** — automated Claude Code review runs on PR open/update
-6. **Address feedback** — resolve all review conversations
-7. **Merge** — auto-merge after checks pass and conversations are resolved
+5. **Address feedback** — resolve all review conversations
+6. **Merge** — auto-merge after checks pass and conversations are resolved
 
 Branch protection on `main` enforces:
 - PRs required (no direct push)
@@ -95,14 +94,9 @@ Branch protection on `main` enforces:
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and PRs:
-1. Python 3.12 + uv setup
-2. `uv sync`
-3. Unit tests with 100% coverage
-4. Integration tests (`TERRIBLE_INTEGRATION=1`)
-
-`.github/workflows/claude-review.yml` runs Claude Code review on PRs.
-Requires `ANTHROPIC_API_KEY` repo secret.
+GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and PRs.
+It calls `make test-all` — the same single source of truth used by the
+pre-commit hook. This ensures CI and local checks can never drift apart.
 
 ## Release Process
 
