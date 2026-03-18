@@ -22,7 +22,7 @@ import yaml
 from tf.schema import Schema, Attribute
 from tf.types import Bool, NormalizedJson, Number, String
 
-from .task_base import TerribleTaskBase
+from .task_base import TerribleTaskBase, _MODULE_TIMEOUT
 from .task_datasource import TerribleTaskDataSource
 
 log = logging.getLogger(__name__)
@@ -60,6 +60,30 @@ _FRAMEWORK_ATTRS = [
         "triggers",
         NormalizedJson(),
         description="Arbitrary map of values; any change triggers task re-execution",
+        optional=True,
+    ),
+    Attribute(
+        "timeout",
+        Number(),
+        description=f"Override the default execution timeout (seconds). Defaults to {_MODULE_TIMEOUT}.",
+        optional=True,
+    ),
+    Attribute(
+        "ignore_errors",
+        Bool(),
+        description="When true, a failed task does not raise a Terraform error.",
+        optional=True,
+    ),
+    Attribute(
+        "changed_when",
+        String(),
+        description="Jinja2 expression that overrides when the task is considered changed (e.g. 'false').",
+        optional=True,
+    ),
+    Attribute(
+        "failed_when",
+        String(),
+        description="Jinja2 expression that overrides when the task is considered failed.",
         optional=True,
     ),
 ]

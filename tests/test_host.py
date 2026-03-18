@@ -27,7 +27,51 @@ class TestTerribleHost:
 
     def test_get_schema_has_expected_attrs(self):
         names = {a.name for a in TerribleHost.get_schema().attributes}
-        assert {"id", "host", "port", "user", "private_key_path", "connection"} == names
+        assert names == {
+            "id", "host", "port", "user", "private_key_path", "connection",
+            "ssh_extra_args",
+            "become", "become_user", "become_method", "become_password",
+            "vars",
+        }
+
+    def test_become_password_is_sensitive(self):
+        attrs = {a.name: a for a in TerribleHost.get_schema().attributes}
+        assert attrs["become_password"].sensitive
+
+    def test_private_key_path_is_sensitive(self):
+        attrs = {a.name: a for a in TerribleHost.get_schema().attributes}
+        assert attrs["private_key_path"].sensitive
+
+    def test_create_stores_become_fields(self):
+        prov = _provider()
+        inst = TerribleHost(prov)
+        state = inst.create(_ctx(CreateContext), {
+            "host": "10.0.0.1",
+            "become": True,
+            "become_user": "root",
+            "become_method": "sudo",
+            "become_password": "s3cr3t",
+        })
+        assert state["become"] is True
+        assert state["become_user"] == "root"
+
+    def test_create_stores_vars(self):
+        prov = _provider()
+        inst = TerribleHost(prov)
+        state = inst.create(_ctx(CreateContext), {
+            "host": "10.0.0.1",
+            "vars": {"ansible_python_interpreter": "/usr/bin/python3.11"},
+        })
+        assert state["vars"] == {"ansible_python_interpreter": "/usr/bin/python3.11"}
+
+    def test_create_stores_ssh_extra_args(self):
+        prov = _provider()
+        inst = TerribleHost(prov)
+        state = inst.create(_ctx(CreateContext), {
+            "host": "10.0.0.1",
+            "ssh_extra_args": "-o ProxyJump=bastion",
+        })
+        assert state["ssh_extra_args"] == "-o ProxyJump=bastion"
 
     def test_create_assigns_id(self):
         prov = _provider()

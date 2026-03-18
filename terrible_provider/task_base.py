@@ -43,7 +43,7 @@ def _ensure_ansible_initialized():
         from ansible import context
         from ansible.utils.context_objects import CLIArgs
         context.CLIARGS = CLIArgs({
-            'module_path': None, 'forks': 1, 'become': False,
+            'module_path': None, 'forks': 1,
             'become_method': None, 'become_user': None,
             'check': False, 'diff': False, 'timeout': _MODULE_TIMEOUT,
             'connection': 'ssh', 'verbosity': 0,
@@ -86,7 +86,16 @@ def _make_callback():
 # Core execution
 # ---------------------------------------------------------------------------
 
-def _run_module(host_state: dict, module: str, args: Optional[str], *, check_only: bool = False) -> dict:
+def _run_module(
+    host_state: dict,
+    module: str,
+    args: Optional[str],
+    *,
+    check_only: bool = False,
+    timeout: Optional[int] = None,
+    changed_when: Optional[str] = None,
+    failed_when: Optional[str] = None,
+) -> dict:
     """Run an Ansible module in-process via TaskQueueManager."""
     _ensure_ansible_initialized()
 
@@ -95,6 +104,8 @@ def _run_module(host_state: dict, module: str, args: Optional[str], *, check_onl
     from ansible.vars.manager import VariableManager
     from ansible.playbook.play import Play
     from ansible.executor.task_queue_manager import TaskQueueManager
+    from ansible import context as _ansible_context
+    from ansible.utils.context_objects import CLIArgs
 
     host = host_state["host"]
     port = int(host_state.get("port") or 22)
@@ -112,6 +123,11 @@ def _run_module(host_state: dict, module: str, args: Optional[str], *, check_onl
             _real_signal = _signal.signal
             _signal.signal = lambda *a, **kw: None  # type: ignore[method-assign]
 
+        # Override CLIARGS timeout for this call; restore in finally.
+        effective_timeout = int(timeout) if timeout else _MODULE_TIMEOUT
+        orig_cliargs = _ansible_context.CLIARGS
+        _ansible_context.CLIARGS = CLIArgs({**dict(orig_cliargs), 'timeout': effective_timeout})
+
         loader = DataLoader()
         inv    = InventoryManager(loader=loader, sources='target,')
         hobj   = inv.get_host('target')
@@ -125,15 +141,27 @@ def _run_module(host_state: dict, module: str, args: Optional[str], *, check_onl
             hobj.vars['ansible_ssh_private_key_file'] = key
         if connection != 'local':
             hobj.vars['ansible_ssh_extra_args'] = (
-                '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+                host_state.get("ssh_extra_args")
+                or '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
             )
+        if host_state.get("become"):
+            hobj.vars['ansible_become']          = True
+            hobj.vars['ansible_become_user']     = host_state.get("become_user") or "root"
+            hobj.vars['ansible_become_method']   = host_state.get("become_method") or "sudo"
+            hobj.vars['ansible_become_password'] = host_state.get("become_password")
+        hobj.vars.update(host_state.get("vars") or {})
 
         vm  = VariableManager(loader=loader, inventory=inv)
         cb  = _make_callback()
+        task_dict: dict = dict(action=module, args=args_dict)
+        if changed_when is not None:
+            task_dict['changed_when'] = changed_when
+        if failed_when is not None:
+            task_dict['failed_when'] = failed_when
         play = Play().load(dict(
             name='terrible_task', hosts='target', gather_facts='no',
             check_mode=check_only, diff=check_only,
-            tasks=[dict(action=module, args=args_dict)],
+            tasks=[task_dict],
         ), variable_manager=vm, loader=loader)
 
         tqm = None
@@ -158,11 +186,15 @@ def _run_module(host_state: dict, module: str, args: Optional[str], *, check_onl
             loader.cleanup_all_tmp_files()
             if not _in_main:
                 _signal.signal = _real_signal  # type: ignore[method-assign]
+            _ansible_context.CLIARGS = orig_cliargs
 
     return cb.result or {"failed": True, "msg": "No result captured from Ansible"}
 
 
-_SKIP_ATTRS = frozenset({"id", "host_id", "result", "changed", "triggers"})
+_SKIP_ATTRS = frozenset({
+    "id", "host_id", "result", "changed", "triggers",
+    "timeout", "ignore_errors", "changed_when", "failed_when",
+})
 
 
 def _build_args_str(state: dict) -> Optional[str]:
@@ -229,18 +261,18 @@ class TerribleTaskBase(Resource):
         if host is None:
             return {}, False, {}
 
-        # Collect module args from planned state as JSON (avoids k=v parsing ambiguity
-        # and correctly handles free-form modules like command/shell)
         args_str = _build_args_str(planned)
-
-        result = _run_module(host, self.__class__._module_name, args_str)
+        result = _run_module(
+            host, self.__class__._module_name, args_str,
+            timeout=planned.get("timeout"),
+            changed_when=planned.get("changed_when"),
+            failed_when=planned.get("failed_when"),
+        )
         changed = bool(result.get("changed", False))
         if result.get("failed") or result.get("unreachable"):
-            diags.add_error("Ansible task failed", result.get("msg", "unknown error"))
+            if not planned.get("ignore_errors"):
+                diags.add_error("Ansible task failed", result.get("msg", "unknown error"))
 
-        # Unpack individual return attributes; default absent ones to None so
-        # no Unknown values leak through from the plan phase.
-        # Apply per-attribute coercers to handle mis-documented module RETURN types.
         coercers = self.__class__._return_attr_coercers
         return_attrs = {
             name: coercers[name](result.get(name)) if name in coercers else result.get(name)
@@ -251,7 +283,6 @@ class TerribleTaskBase(Resource):
     def create(self, ctx: CreateContext, planned: dict) -> Optional[dict]:
         result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
         new_id = uuid.uuid4().hex
-        # Merge: planned inputs first, then computed outputs (overrides any Unknown from plan)
         state = {**planned, **return_attrs, "id": new_id, "result": result, "changed": changed}
         self._prov._state[new_id] = state
         self._prov._save_state()
@@ -262,7 +293,11 @@ class TerribleTaskBase(Resource):
         host = self._resolve_host(current["host_id"], diags)
         if host is None:
             return None
-        return _run_module(host, self.__class__._module_name, _build_args_str(current), check_only=True)
+        return _run_module(
+            host, self.__class__._module_name, _build_args_str(current),
+            check_only=True,
+            timeout=current.get("timeout"),
+        )
 
     def read(self, ctx: ReadContext, current: dict) -> Optional[dict]:
         stored = self._prov._state.get(current["id"])

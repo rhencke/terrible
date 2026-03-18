@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from tf.schema import Schema, Attribute
-from tf.types import String, Number
+from tf.types import Bool, NormalizedJson, String, Number
 from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, DeleteContext, ImportContext
 
 
@@ -32,6 +32,44 @@ class TerribleHost(Resource):
                     "connection",
                     String(),
                     description="Ansible connection type (e.g. local, ssh, docker). Defaults to ssh.",
+                    optional=True,
+                ),
+                Attribute(
+                    "ssh_extra_args",
+                    String(),
+                    description=(
+                        "Extra SSH arguments appended to ansible_ssh_extra_args. "
+                        "Defaults to StrictHostKeyChecking=no when unset."
+                    ),
+                    optional=True,
+                ),
+                Attribute("become", Bool(), description="Enable privilege escalation.", optional=True),
+                Attribute(
+                    "become_user",
+                    String(),
+                    description="User to become. Defaults to root when become is true.",
+                    optional=True,
+                ),
+                Attribute(
+                    "become_method",
+                    String(),
+                    description="Escalation method (sudo, su, pbrun, …). Defaults to sudo.",
+                    optional=True,
+                ),
+                Attribute(
+                    "become_password",
+                    String(),
+                    description="Password for privilege escalation.",
+                    optional=True,
+                    sensitive=True,
+                ),
+                Attribute(
+                    "vars",
+                    NormalizedJson(),
+                    description=(
+                        "Arbitrary Ansible host variables merged into the host object "
+                        "(e.g. ansible_python_interpreter, ansible_shell_type)."
+                    ),
                     optional=True,
                 ),
             ]

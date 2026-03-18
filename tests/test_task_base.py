@@ -67,6 +67,13 @@ class TestBuildArgsStr:
         s = _build_args_str({"id": "1", "host_id": "2", "result": {}, "changed": True, "triggers": None})
         assert s is None
 
+    def test_skips_new_framework_attrs(self):
+        s = _build_args_str({
+            "timeout": 300, "ignore_errors": True,
+            "changed_when": "false", "failed_when": "rc != 0",
+        })
+        assert s is None
+
     def test_skips_none_values(self):
         s = _build_args_str({"path": None, "mode": "0644"})
         assert json.loads(s) == {"mode": "0644"}
@@ -544,3 +551,200 @@ class TestRunModule:
         t.start()
         t.join()
         assert results == [{"changed": False}]
+
+    def test_become_vars_set(self):
+        host = {
+            "host": "127.0.0.1", "connection": "local",
+            "become": True, "become_user": "root",
+            "become_method": "sudo", "become_password": "s3cr3t",
+        }
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                hobj = inventory.get_host("target")
+                captured.update(hobj.vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert captured.get("ansible_become") is True
+        assert captured.get("ansible_become_user") == "root"
+        assert captured.get("ansible_become_method") == "sudo"
+        assert captured.get("ansible_become_password") == "s3cr3t"
+
+    def test_become_defaults(self):
+        host = {"host": "127.0.0.1", "connection": "local", "become": True}
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured.update(inventory.get_host("target").vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert captured.get("ansible_become_user") == "root"
+        assert captured.get("ansible_become_method") == "sudo"
+
+    def test_become_false_skipped(self):
+        host = {"host": "127.0.0.1", "connection": "local", "become": False}
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured.update(inventory.get_host("target").vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert "ansible_become" not in captured
+
+    def test_vars_merged(self):
+        host = {
+            "host": "127.0.0.1", "connection": "local",
+            "vars": {"ansible_python_interpreter": "/usr/bin/python3.11"},
+        }
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured.update(inventory.get_host("target").vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert captured.get("ansible_python_interpreter") == "/usr/bin/python3.11"
+
+    def test_ssh_extra_args_custom(self):
+        host = {"host": "10.0.0.1", "connection": "ssh", "ssh_extra_args": "-o ProxyJump=bastion"}
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured.update(inventory.get_host("target").vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert captured.get("ansible_ssh_extra_args") == "-o ProxyJump=bastion"
+
+    def test_ssh_extra_args_default_when_unset(self):
+        host = {"host": "10.0.0.1", "connection": "ssh"}
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured.update(inventory.get_host("target").vars)
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(host, "ansible.builtin.ping", None)
+        assert "StrictHostKeyChecking" in captured.get("ansible_ssh_extra_args", "")
+
+    def test_timeout_overrides_cliargs(self):
+        from ansible import context as _ctx
+        original_timeout = dict(_ctx.CLIARGS).get("timeout")
+        MockTQM = _make_mock_tqm({"changed": False})
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None, timeout=42)
+        # After the call, CLIARGS must be restored
+        assert dict(_ctx.CLIARGS).get("timeout") == original_timeout
+
+    def test_changed_when_passed_to_task(self):
+        captured_play = {}
+        class _CaptureTQM:
+            def __init__(self, **kw): self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                captured_play['tasks'] = play.compile()
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None, changed_when="false")
+        # The play was loaded with changed_when — just verify no error
+        assert "tasks" in captured_play
+
+    def test_failed_when_passed_to_task(self):
+        captured_play = {}
+        class _CaptureTQM:
+            def __init__(self, **kw): self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                captured_play['tasks'] = play.compile()
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None, failed_when="rc != 0")
+        assert "tasks" in captured_play
+
+
+# ---------------------------------------------------------------------------
+# _execute — ignore_errors and new kwarg passthrough
+# ---------------------------------------------------------------------------
+
+class TestExecuteIgnoreErrors:
+    _RESULT = {"failed": True, "msg": "intentional"}
+
+    def test_ignore_errors_suppresses_diagnostic(self):
+        klass = _make_class()
+        prov = _provider(state={"h1": _host()})
+        inst = klass(prov)
+        diags = Diagnostics()
+        with patch("terrible_provider.task_base._run_module", return_value=self._RESULT):
+            inst._execute(diags, {"host_id": "h1", "ignore_errors": True})
+        assert not diags.has_errors()
+
+    def test_ignore_errors_false_still_adds_error(self):
+        klass = _make_class()
+        prov = _provider(state={"h1": _host()})
+        inst = klass(prov)
+        diags = Diagnostics()
+        with patch("terrible_provider.task_base._run_module", return_value=self._RESULT):
+            inst._execute(diags, {"host_id": "h1", "ignore_errors": False})
+        assert diags.has_errors()
+
+    def test_timeout_and_expressions_forwarded(self):
+        klass = _make_class()
+        prov = _provider(state={"h1": _host()})
+        inst = klass(prov)
+        calls = []
+        def _mock_run(host, module, args, **kwargs):
+            calls.append(kwargs)
+            return {"changed": False}
+        with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
+            inst._execute(
+                Diagnostics(),
+                {"host_id": "h1", "timeout": 60, "changed_when": "false", "failed_when": "rc != 0"},
+            )
+        assert calls[0]["timeout"] == 60
+        assert calls[0]["changed_when"] == "false"
+        assert calls[0]["failed_when"] == "rc != 0"
