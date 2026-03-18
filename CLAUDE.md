@@ -78,6 +78,27 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and PRs:
 2. `pip install -e .`
 3. `pytest -q`
 
+## Release Process
+
+Always use `scripts/release.sh` (or `make release VERSION=x.y.z`) when cutting a release. Never tag or create a GitHub release manually. The script enforces a clean working tree, runs the test suite, creates the annotated tag, pushes it, and creates the GitHub release in one go.
+
+```bash
+# Pipe release notes into the script (or make target):
+scripts/release.sh 0.4.0 <<'EOF'
+New features in this release
+
+## Features
+- foo
+- bar
+EOF
+
+# Equivalent via make:
+make release VERSION=0.4.0   # reads notes interactively from stdin
+```
+
+Release notes must be written for every release — never leave them empty.
+
 ## Claude Instructions
 
 - Do not add `Co-Authored-By: Claude` or any Claude/Anthropic attribution to commit messages.
+- Always use `scripts/release.sh` when tagging a release — never tag or create GitHub releases manually.

@@ -1,6 +1,6 @@
 UV=uv run
 
-.PHONY: help editable-install install-provider run-provider example-init example-apply example-fresh integration-test integration-test-verbose build-binary
+.PHONY: help editable-install install-provider run-provider example-init example-apply example-fresh integration-test integration-test-verbose build-binary release
 
 help:
 	@echo "Makefile targets:"
@@ -13,6 +13,7 @@ help:
 	@echo "  integration-test       - build binary and run integration tests against localhost"
 	@echo "  integration-test-verbose - same, with verbose output"
 	@echo "  build-binary           - build a standalone pex binary (terraform-provider-terrible)"
+	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
 
 editable-install:
 	$(UV) pip install -e .
@@ -38,6 +39,10 @@ integration-test:
 
 integration-test-verbose:
 	TERRIBLE_INTEGRATION=1 $(UV) pytest tests/integration/ -v -s --timeout=120
+
+release:
+	@test -n "$(VERSION)" || (echo "Usage: make release VERSION=x.y.z"; exit 1)
+	scripts/release.sh "$(VERSION)"
 
 build-binary:
 	uv export --format requirements-txt --no-dev --no-hashes | grep -v '^-e' > /tmp/terrible-requirements.txt
