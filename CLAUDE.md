@@ -123,22 +123,42 @@ gh run watch <run-id> --exit-status
 
 ### Cutting a release (0.5.0+ — Terraform Registry publishing)
 
-Once the Actions release workflow exists (#20), the process changes:
+**Nothing publishes until everything passes on every platform.**
+
+The `release.yml` workflow enforces this with two sequential stages:
+
+**Stage 1 — validate (all must pass before stage 2 runs):**
+- Unit tests (`uv run pytest -q`, 100% coverage) on all 5 platform runners
+- Integration tests on all 5 platform runners
+- PyInstaller binary builds on all 5 platform runners
+
+**Stage 2 — publish (runs only if stage 1 is fully green):**
+- Merge all platform zips
+- Generate `SHA256SUMS`
+- GPG-sign (`SHA256SUMS.sig`)
+- Upload all assets to GitHub release
+- registry.terraform.io auto-detects within ~10 minutes
+
+A single failing platform in stage 1 — whether a test failure or a build
+failure — blocks the entire release. No partial publishing.
+
+To cut a release:
 
 1. Run pre-release checklist above.
-2. Push the tag — **do not** create the GitHub release manually:
+2. Push the tag:
    ```bash
    git tag -a v0.5.0 -m "v0.5.0 — <title>"
    git push origin v0.5.0
    ```
-3. The `release.yml` workflow triggers automatically. It builds PyInstaller
-   binaries on all 5 platform runners, zips them, generates `SHA256SUMS`,
-   signs with GPG, and uploads everything to a draft GitHub release.
-4. Review the draft release, add release notes, and publish.
-5. registry.terraform.io picks up the new version automatically within
-   ~10 minutes.
+3. Monitor the workflow:
+   ```bash
+   gh run watch --exit-status
+   ```
+4. If all green, the release publishes automatically. If anything fails,
+   delete the tag, fix the issue, and re-tag.
 
-Update `scripts/release.sh` in issue #21 to automate steps 2–4.
+`scripts/release.sh` (issue #21) will wrap steps 2–3 and surface failures
+clearly.
 
 ### Milestones and issues
 
