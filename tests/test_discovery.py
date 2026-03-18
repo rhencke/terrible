@@ -20,6 +20,7 @@ from terrible_provider.discovery import (
     _check_mode_support,
     _coercers_for,
     _fqcn_for_path,
+    _get_installed_collections,
     _load_cached,
     _open_cache,
     _parse_yaml_block,
@@ -585,3 +586,109 @@ class TestDiscoverTaskResources:
              patch("terrible_provider.discovery._save_cache"), \
              patch.object(loader.module_loader, "all", return_value=[]):
             discover_task_resources()  # Must not raise
+
+    def test_installed_collection_with_no_modules_warns(self, tmp_path, caplog):
+        import ansible.plugins.loader as loader
+        import logging
+        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
+             patch.object(loader.module_loader, "all", return_value=[]), \
+             patch("terrible_provider.discovery._get_installed_collections",
+                   return_value={"community.general", "community.crypto"}):
+            with caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"):
+                discover_task_resources()
+        warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        assert any("community.general" in m for m in warned)
+        assert any("community.crypto" in m for m in warned)
+
+    def test_installed_collection_with_modules_no_warn(self, tmp_path, caplog):
+        mod_dir = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
+        mod_dir.mkdir(parents=True)
+        (mod_dir / "ping.py").write_text(_FAKE_MODULE_NONE)
+        import ansible.plugins.loader as loader
+        import logging
+        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
+             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "ping.py")]), \
+             patch("terrible_provider.discovery._get_installed_collections",
+                   return_value={"community.general"}):
+            with caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"):
+                discover_task_resources()
+        warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        assert not any("community.general" in m for m in warned)
+
+    def test_collection_presence_check_exception_handled(self, caplog):
+        import ansible.plugins.loader as loader
+        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
+             patch.object(loader.module_loader, "all", return_value=[]), \
+             patch("terrible_provider.discovery._get_installed_collections",
+                   side_effect=RuntimeError("boom")):
+            discover_task_resources()  # Must not raise
+
+
+# ---------------------------------------------------------------------------
+# _get_installed_collections
+# ---------------------------------------------------------------------------
+
+class TestGetInstalledCollections:
+    def test_empty_paths_returns_empty(self):
+        assert _get_installed_collections([]) == set()
+
+    def test_nonexistent_dir_skipped(self, tmp_path):
+        result = _get_installed_collections([str(tmp_path / "nonexistent")])
+        assert result == set()
+
+    def test_single_collection_found(self, tmp_path):
+        coll_dir = tmp_path / "ansible_collections" / "community" / "general"
+        coll_dir.mkdir(parents=True)
+        result = _get_installed_collections([str(tmp_path)])
+        assert result == {"community.general"}
+
+    def test_multiple_collections_found(self, tmp_path):
+        for ns, coll in [("community", "general"), ("community", "crypto"), ("ansible", "netcommon")]:
+            (tmp_path / "ansible_collections" / ns / coll).mkdir(parents=True)
+        result = _get_installed_collections([str(tmp_path)])
+        assert result == {"community.general", "community.crypto", "ansible.netcommon"}
+
+    def test_hidden_namespace_dirs_skipped(self, tmp_path):
+        (tmp_path / "ansible_collections" / ".hidden" / "general").mkdir(parents=True)
+        (tmp_path / "ansible_collections" / "community" / ".hidden_coll").mkdir(parents=True)
+        (tmp_path / "ansible_collections" / "community" / "real").mkdir(parents=True)
+        result = _get_installed_collections([str(tmp_path)])
+        assert result == {"community.real"}
+
+    def test_files_not_dirs_skipped(self, tmp_path):
+        ac = tmp_path / "ansible_collections"
+        ac.mkdir()
+        (ac / "notadir.txt").write_text("x")
+        ns = ac / "community"
+        ns.mkdir()
+        (ns / "notacoll.txt").write_text("x")
+        (ns / "real").mkdir()
+        result = _get_installed_collections([str(tmp_path)])
+        assert result == {"community.real"}
+
+    def test_multiple_collection_paths(self, tmp_path):
+        p1 = tmp_path / "path1"
+        p2 = tmp_path / "path2"
+        (p1 / "ansible_collections" / "community" / "general").mkdir(parents=True)
+        (p2 / "ansible_collections" / "ansible" / "netcommon").mkdir(parents=True)
+        result = _get_installed_collections([str(p1), str(p2)])
+        assert result == {"community.general", "ansible.netcommon"}
+
+    def test_oserror_on_iterdir_handled(self, tmp_path):
+        ac = tmp_path / "ansible_collections"
+        ac.mkdir()
+        with patch("pathlib.Path.iterdir", side_effect=OSError("perm denied")):
+            result = _get_installed_collections([str(tmp_path)])
+        assert result == set()
+
+    def test_uses_ansible_constants_when_no_paths_given(self, tmp_path):
+        coll_dir = tmp_path / "ansible_collections" / "community" / "general"
+        coll_dir.mkdir(parents=True)
+        with patch("ansible.constants.COLLECTIONS_PATHS", [str(tmp_path)]):
+            result = _get_installed_collections()
+        assert "community.general" in result
+
+    def test_ansible_import_error_returns_empty(self, monkeypatch):
+        monkeypatch.setitem(sys.modules, "ansible.constants", None)
+        result = _get_installed_collections()
+        assert result == set()

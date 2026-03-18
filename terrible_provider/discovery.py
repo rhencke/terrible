@@ -335,6 +335,36 @@ def make_datasource_class(fqcn: str, options: dict, returns: dict) -> type:
     )
 
 
+def _get_installed_collections(collection_paths=None) -> set[str]:
+    """Return the set of 'namespace.collection' strings found in collection_paths.
+
+    When *collection_paths* is None, reads ``ansible.constants.COLLECTIONS_PATHS``.
+    """
+    if collection_paths is None:
+        try:
+            import ansible.constants as C
+            collection_paths = C.COLLECTIONS_PATHS or []
+        except ImportError:
+            return set()
+
+    installed: set[str] = set()
+    for cp in collection_paths:
+        ac_dir = Path(cp) / "ansible_collections"
+        if not ac_dir.is_dir():
+            continue
+        try:
+            for ns_dir in ac_dir.iterdir():
+                if not ns_dir.is_dir() or ns_dir.name.startswith("."):
+                    continue
+                for coll_dir in ns_dir.iterdir():
+                    if not coll_dir.is_dir() or coll_dir.name.startswith("."):
+                        continue
+                    installed.add(f"{ns_dir.name}.{coll_dir.name}")
+        except OSError:
+            pass
+    return installed
+
+
 def _cache_db_path() -> Path:
     cache_dir = Path.home() / ".cache" / "tf-python-provider"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -469,6 +499,22 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
                     log.debug("Registered data source type: %s", fqcn)
             except Exception as exc:
                 log.debug("Failed to build class for %s: %s", fqcn, exc)
+
+        # Warn about installed collections that contributed no discoverable modules.
+        seen_collections = {
+            ".".join(fqcn.split(".")[:2])
+            for fqcn in seen_fqcns
+            if not fqcn.startswith("ansible.builtin.")
+        }
+        try:
+            for coll in sorted(_get_installed_collections() - seen_collections):
+                log.warning(
+                    "Installed collection '%s' contributed no discoverable modules; "
+                    "check that it is correctly installed",
+                    coll,
+                )
+        except Exception as exc:
+            log.debug("Collection presence check failed: %s", exc)
 
         log.info("Discovered %d Ansible task types (%d data sources)", len(resources), len(datasources))
 
