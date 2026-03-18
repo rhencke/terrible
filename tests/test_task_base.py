@@ -73,6 +73,7 @@ class TestBuildArgsStr:
             "changed_when": "false", "failed_when": "rc != 0",
             "environment": {"FOO": "bar"}, "tags": ["deploy"], "skip_tags": ["slow"],
             "async_seconds": 600, "poll_interval": 10,
+            "delegate_to_id": "h2",
         })
         assert s is None
 
@@ -896,3 +897,102 @@ class TestAsyncTaskExecution:
         task = self._find_task(captured_play["tasks"])
         assert task is not None
         assert task.async_val == 0
+
+
+# ---------------------------------------------------------------------------
+# delegate_to on task resources
+# ---------------------------------------------------------------------------
+
+class TestDelegateTo:
+    _HOST = {"host": "127.0.0.1", "port": 22, "connection": "local"}
+    _DELEGATE = {"host": "10.0.0.99", "port": 22, "user": "deploy", "connection": "ssh"}
+
+    @staticmethod
+    def _find_task(compiled_blocks):
+        for block in compiled_blocks:
+            for t in block.block:
+                if t.action != 'meta':
+                    return t
+        return None
+
+    def test_delegate_host_added_to_inventory(self):
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured['inventory'] = inventory
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                captured['tasks'] = play.compile()
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None,
+                        delegate_host_state=self._DELEGATE)
+        inv = captured['inventory']
+        delegate = inv.get_host('delegate')
+        assert delegate is not None
+        assert delegate.vars['ansible_host'] == '10.0.0.99'
+        assert delegate.vars['ansible_user'] == 'deploy'
+
+    def test_delegate_to_in_task_dict(self):
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, **kw): self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                captured['tasks'] = play.compile()
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None,
+                        delegate_host_state=self._DELEGATE)
+        task = self._find_task(captured['tasks'])
+        assert task is not None
+        assert task.delegate_to == 'delegate'
+
+    def test_no_delegate_when_none(self):
+        captured = {}
+        class _CaptureTQM:
+            def __init__(self, inventory, **kw):
+                captured['inventory'] = inventory
+                self._callback_plugins = []
+            def load_callbacks(self): pass
+            def run(self, play):
+                captured['tasks'] = play.compile()
+                for cb in self._callback_plugins:
+                    if hasattr(cb, 'result') and cb.result is None:
+                        cb.result = {"changed": False}
+            def cleanup(self): pass
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.ping", None)
+        inv = captured['inventory']
+        assert inv.get_host('delegate') is None
+        task = self._find_task(captured['tasks'])
+        assert task.delegate_to is None
+
+    def test_execute_resolves_delegate_host(self):
+        klass = _make_class()
+        h2 = {"host": "10.0.0.99", "connection": "ssh"}
+        prov = _provider(state={"h1": _host(), "h2": h2})
+        inst = klass(prov)
+        calls = []
+        def _mock_run(host, module, args, **kwargs):
+            calls.append(kwargs)
+            return {"changed": False}
+        with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
+            inst._execute(Diagnostics(), {"host_id": "h1", "delegate_to_id": "h2"})
+        assert calls[0]["delegate_host_state"]["host"] == "10.0.0.99"
+
+    def test_execute_errors_on_missing_delegate(self):
+        klass = _make_class()
+        prov = _provider(state={"h1": _host()})
+        inst = klass(prov)
+        diags = Diagnostics()
+        with patch("terrible_provider.task_base._run_module", return_value={"changed": False}):
+            inst._execute(diags, {"host_id": "h1", "delegate_to_id": "missing"})
+        assert diags.has_errors()

@@ -133,6 +133,7 @@ def _run_module(
     skip_tags: Optional[list] = None,
     async_seconds: Optional[int] = None,
     poll_interval: Optional[int] = None,
+    delegate_host_state: Optional[dict] = None,
 ) -> dict:
     """Run an Ansible module in-process via TaskQueueManager."""
     _ensure_ansible_initialized()
@@ -171,6 +172,10 @@ def _run_module(
         hobj   = inv.get_host('target')
         _setup_host_inventory(hobj, host_state)
 
+        if delegate_host_state:
+            inv.add_host(host='delegate', group='all')
+            _setup_host_inventory(inv.get_host('delegate'), delegate_host_state)
+
         vm  = VariableManager(loader=loader, inventory=inv)
         cb  = _make_callback()
         task_dict: dict = dict(action=module, args=args_dict)
@@ -185,6 +190,8 @@ def _run_module(
         if async_seconds and int(async_seconds) > 0:
             task_dict['async'] = int(async_seconds)
             task_dict['poll'] = int(poll_interval) if poll_interval else 15
+        if delegate_host_state:
+            task_dict['delegate_to'] = 'delegate'
         play = Play().load(dict(
             name='terrible_task', hosts='target', gather_facts='no',
             check_mode=check_only, diff=check_only,
@@ -223,6 +230,7 @@ _SKIP_ATTRS = frozenset({
     "timeout", "ignore_errors", "changed_when", "failed_when",
     "environment", "tags", "skip_tags",
     "async_seconds", "poll_interval",
+    "delegate_to_id",
 })
 
 
@@ -290,6 +298,12 @@ class TerribleTaskBase(Resource):
         if host is None:
             return {}, False, {}
 
+        delegate_host = None
+        if planned.get("delegate_to_id"):
+            delegate_host = self._resolve_host(planned["delegate_to_id"], diags)
+            if delegate_host is None:
+                return {}, False, {}
+
         args_str = _build_args_str(planned)
         result = _run_module(
             host, self.__class__._module_name, args_str,
@@ -301,6 +315,7 @@ class TerribleTaskBase(Resource):
             skip_tags=planned.get("skip_tags"),
             async_seconds=planned.get("async_seconds"),
             poll_interval=planned.get("poll_interval"),
+            delegate_host_state=delegate_host,
         )
         changed = bool(result.get("changed", False))
         if result.get("failed") or result.get("unreachable"):

@@ -116,6 +116,12 @@ _FRAMEWORK_ATTRS = [
         description="Polling interval in seconds when async_seconds > 0. Defaults to 15.",
         optional=True,
     ),
+    Attribute(
+        "delegate_to_id",
+        String(),
+        description="ID of another terrible_host to delegate execution to.",
+        optional=True,
+    ),
 ]
 
 _FRAMEWORK_NAMES = {a.name for a in _FRAMEWORK_ATTRS}
