@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 set -e
-
-echo "pre-commit: unit tests (100% coverage required)..."
-uv run pytest tests/ --ignore=tests/integration -q
-
-echo "pre-commit: integration tests..."
-TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov
-
+echo "pre-commit: running make test-all..."
+make test-all
 echo "pre-commit: all checks passed."

@@ -26,10 +26,5 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Unit tests (100% coverage)
-        run: uv run pytest tests/ --ignore=tests/integration -q
-
-      - name: Integration tests
-        run: uv run pytest tests/integration/ -q --no-cov
-        env:
-          TERRIBLE_INTEGRATION: '1'
+      - name: Run all tests (unit + integration)
+        run: make test-all
