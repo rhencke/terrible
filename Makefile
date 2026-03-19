@@ -1,10 +1,11 @@
-.PHONY: help test integration-test test-all install-hooks install-provider run-provider example-init example-apply example-fresh build-binary release
+.PHONY: help lint test integration-test test-all install-hooks install-provider run-provider example-init example-apply example-fresh build-binary release
 
 help:
 	@echo "Makefile targets:"
+	@echo "  lint                   - run ruff (lint + format check) and ty (type check)"
 	@echo "  test                   - run unit tests with 100% coverage"
 	@echo "  integration-test       - run integration tests against localhost"
-	@echo "  test-all               - run unit + integration tests (same as pre-commit hook)"
+	@echo "  test-all               - lint + unit + integration tests (same as pre-commit hook)"
 	@echo "  install-hooks          - install git pre-commit hook"
 	@echo "  install-provider       - install provider into local terraform plugin registry"
 	@echo "  run-provider           - run provider in dev mode (prints TF_REATTACH_PROVIDERS)"
@@ -14,13 +15,18 @@ help:
 	@echo "  build-binary           - build a standalone pex binary (terraform-provider-terrible)"
 	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
 
+lint:
+	uv run ruff check .
+	uv run ruff format --check .
+	uv run ty check
+
 test:
 	uv run pytest tests/ --ignore=tests/integration -q
 
 integration-test:
 	TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov --timeout=120
 
-test-all: test integration-test
+test-all: lint test integration-test
 
 install-hooks:
 	scripts/install-hooks.sh

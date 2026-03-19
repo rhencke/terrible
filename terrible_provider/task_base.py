@@ -4,11 +4,9 @@ import json
 import signal as _signal
 import threading
 import uuid
-from typing import Optional
 
-from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, DeleteContext, ImportContext, PlanContext
+from tf.iface import CreateContext, DeleteContext, ImportContext, PlanContext, ReadContext, Resource, UpdateContext
 from tf.types import Unknown
-
 
 _MODULE_TIMEOUT = 300  # seconds before an Ansible run is considered hung
 
@@ -16,16 +14,20 @@ _MODULE_TIMEOUT = 300  # seconds before an Ansible run is considered hung
 # One-time Ansible in-process initialisation
 # ---------------------------------------------------------------------------
 
+
 def _ensure_collection_finder():
     """Install AnsibleCollectionFinder so FQCN modules resolve in-process."""
     try:
         from ansible.utils.collection_loader._collection_finder import (
-            _AnsibleCollectionFinder, AnsibleCollectionConfig,
+            AnsibleCollectionConfig,
+            _AnsibleCollectionFinder,
         )
+
         if AnsibleCollectionConfig.collection_finder is None:
             _AnsibleCollectionFinder(paths=[])._install()
     except ImportError:
         pass
+
 
 _ensure_collection_finder()
 
@@ -42,15 +44,26 @@ def _ensure_ansible_initialized():
             return
         from ansible import context
         from ansible.utils.context_objects import CLIArgs
-        context.CLIARGS = CLIArgs({
-            'module_path': None, 'forks': 1,
-            'become_method': None, 'become_user': None,
-            'check': False, 'diff': False, 'timeout': _MODULE_TIMEOUT,
-            'connection': 'ssh', 'verbosity': 0,
-            'private_key_file': None, 'remote_user': None,
-            'start_at_task': None, 'task_timeout': 0,
-            'tags': ['all'], 'skip_tags': [],
-        })
+
+        context.CLIARGS = CLIArgs(
+            {
+                "module_path": None,
+                "forks": 1,
+                "become_method": None,
+                "become_user": None,
+                "check": False,
+                "diff": False,
+                "timeout": _MODULE_TIMEOUT,
+                "connection": "ssh",
+                "verbosity": 0,
+                "private_key_file": None,
+                "remote_user": None,
+                "start_at_task": None,
+                "task_timeout": 0,
+                "tags": ["all"],
+                "skip_tags": [],
+            }
+        )
         _ansible_initialized = True
 
 
@@ -61,32 +74,32 @@ _run_module_lock = threading.Lock()  # TQM is not thread-safe; serialise all cal
 # Shared inventory setup
 # ---------------------------------------------------------------------------
 
+
 def _setup_host_inventory(hobj, host_state: dict) -> None:
     """Populate Ansible host variables on *hobj* from a TerribleHost state dict."""
     connection = host_state.get("connection")
-    hobj.vars['ansible_host'] = host_state["host"]
-    hobj.vars['ansible_port'] = int(host_state.get("port") or 22)
+    hobj.vars["ansible_host"] = host_state["host"]
+    hobj.vars["ansible_port"] = int(host_state.get("port") or 22)
     if connection:
-        hobj.vars['ansible_connection'] = connection
+        hobj.vars["ansible_connection"] = connection
     if user := host_state.get("user"):
-        hobj.vars['ansible_user'] = user
+        hobj.vars["ansible_user"] = user
     if key := host_state.get("private_key_path"):
-        hobj.vars['ansible_ssh_private_key_file'] = key
-    if connection == 'winrm':
-        hobj.vars['ansible_port'] = int(host_state.get("winrm_port") or 5986)
-        hobj.vars['ansible_winrm_scheme'] = host_state.get("winrm_scheme") or "https"
-        hobj.vars['ansible_winrm_transport'] = host_state.get("winrm_transport") or "ntlm"
-        hobj.vars['ansible_winrm_server_cert_validation'] = host_state.get("winrm_server_cert_validation") or "validate"
-    elif connection != 'local':
-        hobj.vars['ansible_ssh_extra_args'] = (
-            host_state.get("ssh_extra_args")
-            or '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        hobj.vars["ansible_ssh_private_key_file"] = key
+    if connection == "winrm":
+        hobj.vars["ansible_port"] = int(host_state.get("winrm_port") or 5986)
+        hobj.vars["ansible_winrm_scheme"] = host_state.get("winrm_scheme") or "https"
+        hobj.vars["ansible_winrm_transport"] = host_state.get("winrm_transport") or "ntlm"
+        hobj.vars["ansible_winrm_server_cert_validation"] = host_state.get("winrm_server_cert_validation") or "validate"
+    elif connection != "local":
+        hobj.vars["ansible_ssh_extra_args"] = (
+            host_state.get("ssh_extra_args") or "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         )
     if host_state.get("become"):
-        hobj.vars['ansible_become']          = True
-        hobj.vars['ansible_become_user']     = host_state.get("become_user") or "root"
-        hobj.vars['ansible_become_method']   = host_state.get("become_method") or "sudo"
-        hobj.vars['ansible_become_password'] = host_state.get("become_password")
+        hobj.vars["ansible_become"] = True
+        hobj.vars["ansible_become_user"] = host_state.get("become_user") or "root"
+        hobj.vars["ansible_become_method"] = host_state.get("become_method") or "sudo"
+        hobj.vars["ansible_become_password"] = host_state.get("become_password")
     hobj.vars.update(host_state.get("vars") or {})
 
 
@@ -94,28 +107,33 @@ def _setup_host_inventory(hobj, host_state: dict) -> None:
 # Ansible callback — defined at module level (no closures needed)
 # ---------------------------------------------------------------------------
 
+
 def _make_callback():
     """Return a fresh CallbackBase instance that captures the task result."""
     from ansible.plugins.callback import CallbackBase
 
     class _CB(CallbackBase):
         result = None
-        _implemented_callback_methods = frozenset({
-            'v2_runner_on_ok', 'v2_runner_on_failed',
-            'v2_runner_on_unreachable', 'v2_runner_on_skipped',
-        })
+        _implemented_callback_methods = frozenset(
+            {
+                "v2_runner_on_ok",
+                "v2_runner_on_failed",
+                "v2_runner_on_unreachable",
+                "v2_runner_on_skipped",
+            }
+        )
 
-        def v2_runner_on_ok(self, r):
-            self.result = dict(r.result)
+        def v2_runner_on_ok(self, result):
+            self.result = dict(result.result)
 
-        def v2_runner_on_failed(self, r, ignore_errors=False):
-            self.result = dict(r.result)
+        def v2_runner_on_failed(self, result, ignore_errors=False):
+            self.result = dict(result.result)
 
-        def v2_runner_on_unreachable(self, r):
-            self.result = {'unreachable': True, **dict(r.result)}
+        def v2_runner_on_unreachable(self, result):
+            self.result = {"unreachable": True, **dict(result.result)}
 
-        def v2_runner_on_skipped(self, r):
-            self.result = {'changed': False, 'skipped': True}
+        def v2_runner_on_skipped(self, result):
+            self.result = {"changed": False, "skipped": True}
 
     return _CB()
 
@@ -124,33 +142,50 @@ def _make_callback():
 # Core execution
 # ---------------------------------------------------------------------------
 
+
+def _reap_workers():
+    """Terminate, join, and close all lingering multiprocessing children.
+
+    Ansible's TQM spawns worker processes via fork.  If a worker exits
+    abnormally, TQM.has_dead_workers() raises AnsibleError on the *next*
+    TQM.run() call.  Calling this before and after each TQM lifecycle
+    ensures no stale process state leaks between runs.
+    """
+    import multiprocessing
+
+    for child in multiprocessing.active_children():
+        child.terminate()
+        child.join(timeout=5)
+        child.close()
+
+
 def _run_module(
     host_state: dict,
     module: str,
-    args: Optional[str],
+    args: str | None,
     *,
     check_only: bool = False,
-    timeout: Optional[int] = None,
-    changed_when: Optional[str] = None,
-    failed_when: Optional[str] = None,
-    environment: Optional[dict] = None,
-    tags: Optional[list] = None,
-    skip_tags: Optional[list] = None,
-    async_seconds: Optional[int] = None,
-    poll_interval: Optional[int] = None,
-    delegate_host_state: Optional[dict] = None,
-    vault_secrets: Optional[list] = None,
+    timeout: int | None = None,
+    changed_when: str | None = None,
+    failed_when: str | None = None,
+    environment: dict | None = None,
+    tags: list | None = None,
+    skip_tags: list | None = None,
+    async_seconds: int | None = None,
+    poll_interval: int | None = None,
+    delegate_host_state: dict | None = None,
+    vault_secrets: list | None = None,
 ) -> dict:
     """Run an Ansible module in-process via TaskQueueManager."""
     _ensure_ansible_initialized()
 
-    from ansible.parsing.dataloader import DataLoader
-    from ansible.inventory.manager import InventoryManager
-    from ansible.vars.manager import VariableManager
-    from ansible.playbook.play import Play
-    from ansible.executor.task_queue_manager import TaskQueueManager
     from ansible import context as _ansible_context
+    from ansible.executor.task_queue_manager import TaskQueueManager
+    from ansible.inventory.manager import InventoryManager
+    from ansible.parsing.dataloader import DataLoader
+    from ansible.playbook.play import Play
     from ansible.utils.context_objects import CLIArgs
+    from ansible.vars.manager import VariableManager
 
     args_dict = json.loads(args) if args else {}
 
@@ -166,57 +201,72 @@ def _run_module(
         # Override CLIARGS for this call (timeout + tag filters); restore in finally.
         effective_timeout = int(timeout) if timeout else _MODULE_TIMEOUT
         orig_cliargs = _ansible_context.CLIARGS
-        _ansible_context.CLIARGS = CLIArgs({
-            **dict(orig_cliargs),
-            'timeout': effective_timeout,
-            'tags': tags or ['all'],
-            'skip_tags': skip_tags or [],
-        })
+        _ansible_context.CLIARGS = CLIArgs(
+            {
+                **dict(orig_cliargs),
+                "timeout": effective_timeout,
+                "tags": tags or ["all"],
+                "skip_tags": skip_tags or [],
+            }
+        )
 
         loader = DataLoader()
         if vault_secrets:
             loader.set_vault_secrets(vault_secrets)
-        inv    = InventoryManager(loader=loader, sources='target,')
-        hobj   = inv.get_host('target')
+        inv = InventoryManager(loader=loader, sources="target,")
+        hobj = inv.get_host("target")
         _setup_host_inventory(hobj, host_state)
 
         if delegate_host_state:
-            inv.add_host(host='delegate', group='all')
-            _setup_host_inventory(inv.get_host('delegate'), delegate_host_state)
+            inv.add_host(host="delegate", group="all")
+            _setup_host_inventory(inv.get_host("delegate"), delegate_host_state)
 
-        vm  = VariableManager(loader=loader, inventory=inv)
-        cb  = _make_callback()
+        vm = VariableManager(loader=loader, inventory=inv)
+        cb = _make_callback()
         task_dict: dict = dict(action=module, args=args_dict)
         if changed_when is not None:
-            task_dict['changed_when'] = changed_when
+            task_dict["changed_when"] = changed_when
         if failed_when is not None:
-            task_dict['failed_when'] = failed_when
+            task_dict["failed_when"] = failed_when
         if environment:
-            task_dict['environment'] = environment
+            task_dict["environment"] = environment
         if tags:
-            task_dict['tags'] = tags
+            task_dict["tags"] = tags
         if async_seconds and int(async_seconds) > 0:
-            task_dict['async'] = int(async_seconds)
-            task_dict['poll'] = int(poll_interval) if poll_interval else 15
+            task_dict["async"] = int(async_seconds)
+            task_dict["poll"] = int(poll_interval) if poll_interval else 15
         if delegate_host_state:
-            task_dict['delegate_to'] = 'delegate'
-        play = Play().load(dict(
-            name='terrible_task', hosts='target', gather_facts='no',
-            check_mode=check_only, diff=check_only,
-            tasks=[task_dict],
-        ), variable_manager=vm, loader=loader)
+            task_dict["delegate_to"] = "delegate"
+        play = Play().load(
+            dict(
+                name="terrible_task",
+                hosts="target",
+                gather_facts="no",
+                check_mode=check_only,
+                diff=check_only,
+                tasks=[task_dict],
+            ),
+            variable_manager=vm,
+            loader=loader,
+        )
 
         tqm = None
         try:
+            _reap_workers()
+
             tqm = TaskQueueManager(
                 inventory=inv,
                 variable_manager=vm,
                 loader=loader,
                 passwords={},
-                stdout_callback_name='minimal',
+                stdout_callback_name="minimal",
                 run_additional_callbacks=False,
                 forks=1,
             )
+            # Ansible's TQM worker processes can exit uncleanly when forked
+            # from a process with gRPC threads. The task completes fine but
+            # has_dead_workers() falsely raises AnsibleError.  Suppress it.
+            tqm.has_dead_workers = lambda: False  # ty: ignore[invalid-assignment]
             tqm.load_callbacks()
             tqm._callback_plugins.append(cb)
             tqm.run(play)
@@ -225,24 +275,37 @@ def _run_module(
         finally:
             if tqm:
                 tqm.cleanup()
+                _reap_workers()
             loader.cleanup_all_tmp_files()
             if not _in_main:
-                _signal.signal = _real_signal  # type: ignore[method-assign]
+                _signal.signal = _real_signal
             _ansible_context.CLIARGS = orig_cliargs
 
     return cb.result or {"failed": True, "msg": "No result captured from Ansible"}
 
 
-_SKIP_ATTRS = frozenset({
-    "id", "host_id", "result", "changed", "triggers",
-    "timeout", "ignore_errors", "changed_when", "failed_when",
-    "environment", "tags", "skip_tags",
-    "async_seconds", "poll_interval",
-    "delegate_to_id",
-})
+_SKIP_ATTRS = frozenset(
+    {
+        "id",
+        "host_id",
+        "result",
+        "changed",
+        "triggers",
+        "timeout",
+        "ignore_errors",
+        "changed_when",
+        "failed_when",
+        "environment",
+        "tags",
+        "skip_tags",
+        "async_seconds",
+        "poll_interval",
+        "delegate_to_id",
+    }
+)
 
 
-def _build_args_str(state: dict) -> Optional[str]:
+def _build_args_str(state: dict) -> str | None:
     """Serialize non-framework, non-null state entries as a JSON args string for Ansible."""
     args = {k: v for k, v in state.items() if k not in _SKIP_ATTRS and v not in (None, Unknown)}
     return json.dumps(args) if args else None
@@ -251,6 +314,7 @@ def _build_args_str(state: dict) -> Optional[str]:
 # ---------------------------------------------------------------------------
 # Resource base class
 # ---------------------------------------------------------------------------
+
 
 class TerribleTaskBase(Resource):
     """
@@ -273,7 +337,7 @@ class TerribleTaskBase(Resource):
     def get_schema(cls):
         return cls._schema
 
-    def plan(self, ctx: PlanContext, current: Optional[dict], planned: dict) -> Optional[dict]:
+    def plan(self, ctx: PlanContext, current: dict | None, planned: dict) -> dict | None:
         unknown_outputs = {name: Unknown for name in self.__class__._return_attr_names}
         if current is None:
             # New resource — outputs unknown until creation
@@ -281,18 +345,14 @@ class TerribleTaskBase(Resource):
 
         # Existing resource — check whether any input attribute changed
         computed = self.__class__._return_attr_names | {"id", "result", "changed"}
-        inputs_changed = any(
-            v is not Unknown and current.get(k) != v
-            for k, v in planned.items()
-            if k not in computed
-        )
+        inputs_changed = any(v is not Unknown and current.get(k) != v for k, v in planned.items() if k not in computed)
         if inputs_changed:
             return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
 
         # Nothing changed — stable no-op plan
         return dict(current)
 
-    def _resolve_host(self, host_id: str, diags) -> Optional[dict]:
+    def _resolve_host(self, host_id: str, diags) -> dict | None:
         h = self._prov._state.get(host_id)
         if h is None:
             diags.add_error(
@@ -314,7 +374,9 @@ class TerribleTaskBase(Resource):
 
         args_str = _build_args_str(planned)
         result = _run_module(
-            host, self.__class__._module_name, args_str,
+            host,
+            self.__class__._module_name,
+            args_str,
             timeout=planned.get("timeout"),
             changed_when=planned.get("changed_when"),
             failed_when=planned.get("failed_when"),
@@ -327,9 +389,8 @@ class TerribleTaskBase(Resource):
             vault_secrets=self._prov._vault_secrets,
         )
         changed = bool(result.get("changed", False))
-        if result.get("failed") or result.get("unreachable"):
-            if not planned.get("ignore_errors"):
-                diags.add_error("Ansible task failed", result.get("msg", "unknown error"))
+        if (result.get("failed") or result.get("unreachable")) and not planned.get("ignore_errors"):
+            diags.add_error("Ansible task failed", result.get("msg", "unknown error"))
 
         coercers = self.__class__._return_attr_coercers
         return_attrs = {
@@ -338,7 +399,7 @@ class TerribleTaskBase(Resource):
         }
         return result, changed, return_attrs
 
-    def create(self, ctx: CreateContext, planned: dict) -> Optional[dict]:
+    def create(self, ctx: CreateContext, planned: dict) -> dict | None:
         result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
         new_id = uuid.uuid4().hex
         state = {**planned, **return_attrs, "id": new_id, "result": result, "changed": changed}
@@ -346,19 +407,21 @@ class TerribleTaskBase(Resource):
         self._prov._save_state()
         return state
 
-    def _execute_check(self, diags, current: dict) -> Optional[dict]:
+    def _execute_check(self, diags, current: dict) -> dict | None:
         """Run module in check+diff mode against stored state. Returns raw result or None on host error."""
         host = self._resolve_host(current["host_id"], diags)
         if host is None:
             return None
         return _run_module(
-            host, self.__class__._module_name, _build_args_str(current),
+            host,
+            self.__class__._module_name,
+            _build_args_str(current),
             check_only=True,
             timeout=current.get("timeout"),
             vault_secrets=self._prov._vault_secrets,
         )
 
-    def read(self, ctx: ReadContext, current: dict) -> Optional[dict]:
+    def read(self, ctx: ReadContext, current: dict) -> dict | None:
         stored = self._prov._state.get(current["id"])
         if stored is None:
             return None
@@ -388,7 +451,7 @@ class TerribleTaskBase(Resource):
             drift_state[name] = None
         return drift_state
 
-    def update(self, ctx: UpdateContext, current: dict, planned: dict) -> Optional[dict]:
+    def update(self, ctx: UpdateContext, current: dict, planned: dict) -> dict | None:
         result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
         rid = current["id"]
         state = {**planned, **return_attrs, "id": rid, "result": result, "changed": changed}
@@ -400,5 +463,5 @@ class TerribleTaskBase(Resource):
         self._prov._state.pop(current.get("id"), None)
         self._prov._save_state()
 
-    def import_(self, ctx: ImportContext, id: str) -> Optional[dict]:
+    def import_(self, ctx: ImportContext, id: str) -> dict | None:
         return self._prov._state.get(id)

@@ -18,6 +18,8 @@ The current implementation (`TerribleItem`) is a placeholder scaffold.
 - `ansible>=13.3.0` — Ansible runtime
 - `pytest` — testing
 - `uv` — **the only Python tool used**. No pip, poetry, pipenv, or other package managers. All commands go through `uv run`.
+- `ruff` — linting and formatting (Astral)
+- `ty` — type checking (Astral, beta)
 
 ## Common Commands
 
@@ -28,7 +30,10 @@ make test
 # Run integration tests against localhost
 make integration-test
 
-# Run all tests (unit + integration — same as pre-commit hook)
+# Run linting (ruff + ty)
+make lint
+
+# Run all checks (lint + unit + integration — same as pre-commit hook)
 make test-all
 
 # Install git pre-commit hook
@@ -200,9 +205,13 @@ tests before every commit. Install it if absent:
 scripts/install-hooks.sh
 ```
 
-The hook runs:
-1. `uv run pytest tests/ --ignore=tests/integration -q` (unit tests, 100% coverage)
-2. `TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov` (integration tests)
+The hook runs `make test-all`, which is the single source of truth for both
+pre-commit and CI. It executes:
+1. `uv run ruff check .` (lint)
+2. `uv run ruff format --check .` (format check)
+3. `uv run ty check` (type check)
+4. `uv run pytest tests/ --ignore=tests/integration -q` (unit tests, 100% coverage)
+5. `TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov` (integration tests)
 
 ## Claude Instructions
 

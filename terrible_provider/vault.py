@@ -2,27 +2,30 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
-from tf.iface import DataSource, ReadContext
-from tf.schema import Schema, Attribute
+from tf.iface import DataSource, ReadDataContext
+from tf.schema import Attribute, Schema
 from tf.types import String
 
 
 class TerribleVault(DataSource):
-    _schema = Schema(attributes=[
-        Attribute("id", String(), description="Data source ID (set to 'vault').", computed=True),
-        Attribute(
-            "ciphertext", String(),
-            description="Ansible Vault encrypted string (the $ANSIBLE_VAULT;... blob).",
-            required=True,
-        ),
-        Attribute(
-            "plaintext", String(),
-            description="Decrypted plaintext value.",
-            computed=True, sensitive=True,
-        ),
-    ])
+    _schema = Schema(
+        attributes=[
+            Attribute("id", String(), description="Data source ID (set to 'vault').", computed=True),
+            Attribute(
+                "ciphertext",
+                String(),
+                description="Ansible Vault encrypted string (the $ANSIBLE_VAULT;... blob).",
+                required=True,
+            ),
+            Attribute(
+                "plaintext",
+                String(),
+                description="Decrypted plaintext value.",
+                computed=True,
+                sensitive=True,
+            ),
+        ]
+    )
 
     def __init__(self, provider):
         self._prov = provider
@@ -35,7 +38,7 @@ class TerribleVault(DataSource):
     def get_schema(cls):
         return cls._schema
 
-    def read(self, ctx: ReadContext, config: dict) -> Optional[dict]:
+    def read(self, ctx: ReadDataContext, config: dict) -> dict | None:
         ciphertext = config.get("ciphertext", "")
         if not self._prov._vault_secrets:
             ctx.diagnostics.add_error(
@@ -45,6 +48,7 @@ class TerribleVault(DataSource):
             return None
 
         from ansible.parsing.vault import VaultLib
+
         vault = VaultLib(secrets=self._prov._vault_secrets)
         try:
             plaintext = vault.decrypt(ciphertext).decode("utf-8")

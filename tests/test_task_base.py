@@ -5,27 +5,31 @@ import sys
 import threading
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from tf.iface import (
-    CreateContext, DeleteContext, ImportContext, ReadContext, UpdateContext, PlanContext,
+    CreateContext,
+    DeleteContext,
+    ImportContext,
+    PlanContext,
+    ReadContext,
+    UpdateContext,
 )
-from tf.schema import Attribute, Schema
-from tf.types import Bool, NormalizedJson, String
 from tf.types import Unknown
 from tf.utils import Diagnostics
 
+from terrible_provider.discovery import _coerce_number, make_task_class
 from terrible_provider.task_base import (
-    TerribleTaskBase, _build_args_str,
-    _ensure_collection_finder, _ensure_ansible_initialized,
-    _make_callback, _run_module, _setup_host_inventory,
+    _build_args_str,
+    _ensure_ansible_initialized,
+    _ensure_collection_finder,
+    _make_callback,
+    _run_module,
+    _setup_host_inventory,
 )
-from terrible_provider.discovery import make_task_class, _coerce_number
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _ctx(klass, changed_fields=None):
     diags = Diagnostics()
@@ -58,6 +62,7 @@ def _host():
 # Module-level helpers
 # ---------------------------------------------------------------------------
 
+
 class TestBuildArgsStr:
     def test_basic(self):
         s = _build_args_str({"id": "x", "host_id": "y", "path": "/tmp/f"})
@@ -68,13 +73,20 @@ class TestBuildArgsStr:
         assert s is None
 
     def test_skips_new_framework_attrs(self):
-        s = _build_args_str({
-            "timeout": 300, "ignore_errors": True,
-            "changed_when": "false", "failed_when": "rc != 0",
-            "environment": {"FOO": "bar"}, "tags": ["deploy"], "skip_tags": ["slow"],
-            "async_seconds": 600, "poll_interval": 10,
-            "delegate_to_id": "h2",
-        })
+        s = _build_args_str(
+            {
+                "timeout": 300,
+                "ignore_errors": True,
+                "changed_when": "false",
+                "failed_when": "rc != 0",
+                "environment": {"FOO": "bar"},
+                "tags": ["deploy"],
+                "skip_tags": ["slow"],
+                "async_seconds": 600,
+                "poll_interval": 10,
+                "delegate_to_id": "h2",
+            }
+        )
         assert s is None
 
     def test_skips_none_values(self):
@@ -109,6 +121,7 @@ class TestCoerceNumber:
 # ---------------------------------------------------------------------------
 # TerribleTaskBase.plan
 # ---------------------------------------------------------------------------
+
 
 class TestGetSchema:
     def test_returns_schema(self):
@@ -152,6 +165,7 @@ class TestPlan:
 # TerribleTaskBase._resolve_host
 # ---------------------------------------------------------------------------
 
+
 class TestResolveHost:
     def test_found(self):
         prov = _provider(state={"h1": _host()})
@@ -173,6 +187,7 @@ class TestResolveHost:
 # ---------------------------------------------------------------------------
 # TerribleTaskBase create / update / delete / read / import_
 # ---------------------------------------------------------------------------
+
 
 class TestCRUD:
     _RESULT = {"changed": False, "rc": 0}
@@ -230,6 +245,7 @@ class TestCRUD:
 # ---------------------------------------------------------------------------
 # TerribleTaskBase.read — drift detection
 # ---------------------------------------------------------------------------
+
 
 class TestRead:
     def test_read_returns_stored_state(self):
@@ -296,6 +312,7 @@ class TestRead:
 # _execute error paths
 # ---------------------------------------------------------------------------
 
+
 class TestExecuteErrors:
     def test_ansible_failure_adds_diagnostic(self):
         klass = _make_class()
@@ -320,24 +337,30 @@ class TestExecuteErrors:
 # Helper — fake TaskQueueManager that injects a result into the callback
 # ---------------------------------------------------------------------------
 
+
 def _make_mock_tqm(result):
     class _MockTQM:
         def __init__(self, **kwargs):
             self._callback_plugins = []
+
         def load_callbacks(self):
             pass
+
         def run(self, play):
             for cb in self._callback_plugins:
-                if hasattr(cb, 'result') and cb.result is None:
+                if hasattr(cb, "result") and cb.result is None:
                     cb.result = result
+
         def cleanup(self):
             pass
+
     return _MockTQM
 
 
 # ---------------------------------------------------------------------------
 # _ensure_collection_finder
 # ---------------------------------------------------------------------------
+
 
 class TestEnsureCollectionFinder:
     def test_already_installed_no_op(self):
@@ -347,7 +370,7 @@ class TestEnsureCollectionFinder:
             AnsibleCollectionConfig=mock_cfg,
             _AnsibleCollectionFinder=MagicMock(),
         )
-        with patch.dict(sys.modules, {'ansible.utils.collection_loader._collection_finder': mock_module}):
+        with patch.dict(sys.modules, {"ansible.utils.collection_loader._collection_finder": mock_module}):
             _ensure_collection_finder()
         mock_module._AnsibleCollectionFinder.assert_not_called()
 
@@ -359,13 +382,13 @@ class TestEnsureCollectionFinder:
             _AnsibleCollectionFinder=MagicMock(return_value=mock_finder),
             AnsibleCollectionConfig=mock_cfg,
         )
-        with patch.dict(sys.modules, {'ansible.utils.collection_loader._collection_finder': mock_module}):
+        with patch.dict(sys.modules, {"ansible.utils.collection_loader._collection_finder": mock_module}):
             _ensure_collection_finder()
         mock_module._AnsibleCollectionFinder.assert_called_once_with(paths=[])
         mock_finder._install.assert_called_once()
 
     def test_import_error_is_ignored(self):
-        with patch.dict(sys.modules, {'ansible.utils.collection_loader._collection_finder': None}):
+        with patch.dict(sys.modules, {"ansible.utils.collection_loader._collection_finder": None}):
             _ensure_collection_finder()  # Must not raise
 
 
@@ -373,9 +396,11 @@ class TestEnsureCollectionFinder:
 # _ensure_ansible_initialized
 # ---------------------------------------------------------------------------
 
+
 class TestEnsureAnsibleInitialized:
     def test_sets_cliargs_on_first_call(self):
         import terrible_provider.task_base as tb
+
         original = tb._ansible_initialized
         tb._ansible_initialized = False
         try:
@@ -386,6 +411,7 @@ class TestEnsureAnsibleInitialized:
 
     def test_noop_when_already_initialized(self):
         import terrible_provider.task_base as tb
+
         tb._ansible_initialized = True
         _ensure_ansible_initialized()
         assert tb._ansible_initialized is True
@@ -402,12 +428,13 @@ class TestEnsureAnsibleInitialized:
 
         class _ControlledLock:
             """Drop-in lock whose inner mutex we can hold from the test thread."""
+
             def __init__(self):
                 self._inner = threading.Lock()
                 self.waiting = threading.Event()
 
             def acquire(self, *a, **kw):
-                self.waiting.set()          # signal: thread is about to block
+                self.waiting.set()  # signal: thread is about to block
                 return self._inner.acquire(*a, **kw)
 
             def release(self):
@@ -423,22 +450,22 @@ class TestEnsureAnsibleInitialized:
         orig_init = tb._ansible_initialized
         orig_lock = tb._ansible_init_lock
         controlled = _ControlledLock()
-        controlled._inner.acquire()         # hold the lock before the thread starts
+        controlled._inner.acquire()  # hold the lock before the thread starts
         tb._ansible_init_lock = controlled
         tb._ansible_initialized = False
 
         done = threading.Event()
 
         def _run():
-            _ensure_ansible_initialized()   # outer check False → tries to acquire → blocks
+            _ensure_ansible_initialized()  # outer check False → tries to acquire → blocks
             done.set()
 
         t = threading.Thread(target=_run)
         try:
             t.start()
             controlled.waiting.wait(timeout=2)  # thread is now blocked on acquire()
-            tb._ansible_initialized = True      # set flag while thread can't see yet
-            controlled._inner.release()         # unblock thread → inner check sees True
+            tb._ansible_initialized = True  # set flag while thread can't see yet
+            controlled._inner.release()  # unblock thread → inner check sees True
             assert done.wait(timeout=2), "thread did not finish"
         finally:
             tb._ansible_init_lock = orig_lock
@@ -449,6 +476,7 @@ class TestEnsureAnsibleInitialized:
 # ---------------------------------------------------------------------------
 # _make_callback
 # ---------------------------------------------------------------------------
+
 
 class TestMakeCallback:
     def test_returns_callback_with_none_result(self):
@@ -486,6 +514,25 @@ class TestMakeCallback:
 # ---------------------------------------------------------------------------
 # _run_module
 # ---------------------------------------------------------------------------
+
+
+class TestReapWorkers:
+    def test_reap_terminates_and_joins_children(self):
+        from terrible_provider.task_base import _reap_workers
+
+        child = MagicMock()
+        with patch("multiprocessing.active_children", return_value=[child]):
+            _reap_workers()
+        child.terminate.assert_called_once()
+        child.join.assert_called_once_with(timeout=5)
+        child.close.assert_called_once()
+
+    def test_reap_no_children_is_noop(self):
+        from terrible_provider.task_base import _reap_workers
+
+        with patch("multiprocessing.active_children", return_value=[]):
+            _reap_workers()
+
 
 class TestRunModule:
     _HOST = {"host": "127.0.0.1", "connection": "local"}
@@ -525,12 +572,16 @@ class TestRunModule:
         class _ErrTQM:
             def __init__(self, **kwargs):
                 self._callback_plugins = []
+
             def load_callbacks(self):
                 pass
+
             def run(self, play):
                 raise RuntimeError("task exploded")
+
             def cleanup(self):
                 pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _ErrTQM):
             result = _run_module(self._HOST, "ansible.builtin.ping", None)
         assert result["failed"] is True
@@ -540,12 +591,16 @@ class TestRunModule:
         class _SilentTQM:
             def __init__(self, **kwargs):
                 self._callback_plugins = []
+
             def load_callbacks(self):
                 pass
+
             def run(self, play):
                 pass
+
             def cleanup(self):
                 pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _SilentTQM):
             result = _run_module(self._HOST, "ansible.builtin.ping", None)
         assert result["failed"] is True
@@ -553,9 +608,11 @@ class TestRunModule:
     def test_from_non_main_thread(self):
         MockTQM = _make_mock_tqm({"changed": False})
         results = []
+
         def _run():
             with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
                 results.append(_run_module(self._HOST, "ansible.builtin.ping", None))
+
         t = threading.Thread(target=_run)
         t.start()
         t.join()
@@ -563,22 +620,32 @@ class TestRunModule:
 
     def test_become_vars_set(self):
         host = {
-            "host": "127.0.0.1", "connection": "local",
-            "become": True, "become_user": "root",
-            "become_method": "sudo", "become_password": "s3cr3t",
+            "host": "127.0.0.1",
+            "connection": "local",
+            "become": True,
+            "become_user": "root",
+            "become_method": "sudo",
+            "become_password": "s3cr3t",
         }
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 hobj = inventory.get_host("target")
                 captured.update(hobj.vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert captured.get("ansible_become") is True
@@ -589,16 +656,23 @@ class TestRunModule:
     def test_become_defaults(self):
         host = {"host": "127.0.0.1", "connection": "local", "become": True}
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 captured.update(inventory.get_host("target").vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert captured.get("ansible_become_user") == "root"
@@ -607,36 +681,51 @@ class TestRunModule:
     def test_become_false_skipped(self):
         host = {"host": "127.0.0.1", "connection": "local", "become": False}
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 captured.update(inventory.get_host("target").vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert "ansible_become" not in captured
 
     def test_vars_merged(self):
         host = {
-            "host": "127.0.0.1", "connection": "local",
+            "host": "127.0.0.1",
+            "connection": "local",
             "vars": {"ansible_python_interpreter": "/usr/bin/python3.11"},
         }
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 captured.update(inventory.get_host("target").vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert captured.get("ansible_python_interpreter") == "/usr/bin/python3.11"
@@ -644,16 +733,23 @@ class TestRunModule:
     def test_ssh_extra_args_custom(self):
         host = {"host": "10.0.0.1", "connection": "ssh", "ssh_extra_args": "-o ProxyJump=bastion"}
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 captured.update(inventory.get_host("target").vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert captured.get("ansible_ssh_extra_args") == "-o ProxyJump=bastion"
@@ -661,22 +757,30 @@ class TestRunModule:
     def test_ssh_extra_args_default_when_unset(self):
         host = {"host": "10.0.0.1", "connection": "ssh"}
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
                 captured.update(inventory.get_host("target").vars)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(host, "ansible.builtin.ping", None)
         assert "StrictHostKeyChecking" in captured.get("ansible_ssh_extra_args", "")
 
     def test_timeout_overrides_cliargs(self):
         from ansible import context as _ctx
+
         original_timeout = dict(_ctx.CLIARGS).get("timeout")
         MockTQM = _make_mock_tqm({"changed": False})
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
@@ -686,15 +790,23 @@ class TestRunModule:
 
     def test_changed_when_passed_to_task(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None, changed_when="false")
         # The play was loaded with changed_when — just verify no error
@@ -702,46 +814,69 @@ class TestRunModule:
 
     def test_failed_when_passed_to_task(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None, failed_when="rc != 0")
         assert "tasks" in captured_play
 
     def test_environment_in_task(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
-            _run_module(self._HOST, "ansible.builtin.ping", None,
-                        environment={"ANSIBLE_TIMEOUT": "10"})
+            _run_module(self._HOST, "ansible.builtin.ping", None, environment={"ANSIBLE_TIMEOUT": "10"})
         assert "tasks" in captured_play
 
     def test_tags_in_task(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None, tags=["deploy"])
         assert "tasks" in captured_play
@@ -750,6 +885,7 @@ class TestRunModule:
 # ---------------------------------------------------------------------------
 # _execute — ignore_errors and new kwarg passthrough
 # ---------------------------------------------------------------------------
+
 
 class TestExecuteIgnoreErrors:
     _RESULT = {"failed": True, "msg": "intentional"}
@@ -777,9 +913,11 @@ class TestExecuteIgnoreErrors:
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         calls = []
+
         def _mock_run(host, module, args, **kwargs):
             calls.append(kwargs)
             return {"changed": False}
+
         with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
             inst._execute(
                 Diagnostics(),
@@ -794,9 +932,11 @@ class TestExecuteIgnoreErrors:
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         calls = []
+
         def _mock_run(host, module, args, **kwargs):
             calls.append(kwargs)
             return {"changed": False}
+
         with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
             inst._execute(
                 Diagnostics(),
@@ -816,9 +956,11 @@ class TestExecuteIgnoreErrors:
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         calls = []
+
         def _mock_run(host, module, args, **kwargs):
             calls.append(kwargs)
             return {"changed": False}
+
         with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
             inst._execute(
                 Diagnostics(),
@@ -832,6 +974,7 @@ class TestExecuteIgnoreErrors:
 # Async task execution (async / poll)
 # ---------------------------------------------------------------------------
 
+
 class TestAsyncTaskExecution:
     _HOST = {"host": "127.0.0.1", "port": 22, "connection": "local"}
 
@@ -840,24 +983,33 @@ class TestAsyncTaskExecution:
         """Find the actual (non-meta) task in a compiled play."""
         for block in compiled_blocks:
             for t in block.block:
-                if t.action != 'meta':
+                if t.action != "meta":
                     return t
         return None
 
     def test_async_poll_in_task_dict(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
-            _run_module(self._HOST, "ansible.builtin.command", '{"cmd": "sleep 1"}',
-                        async_seconds=600, poll_interval=10)
+            _run_module(
+                self._HOST, "ansible.builtin.command", '{"cmd": "sleep 1"}', async_seconds=600, poll_interval=10
+            )
         task = self._find_task(captured_play["tasks"])
         assert task is not None
         assert task.async_val == 600
@@ -865,33 +1017,48 @@ class TestAsyncTaskExecution:
 
     def test_no_async_when_zero(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
-            _run_module(self._HOST, "ansible.builtin.ping", None,
-                        async_seconds=0)
+            _run_module(self._HOST, "ansible.builtin.ping", None, async_seconds=0)
         task = self._find_task(captured_play["tasks"])
         assert task is not None
         assert task.async_val == 0
 
     def test_no_async_when_none(self):
         captured_play = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured_play['tasks'] = play.compile()
+                captured_play["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None)
         task = self._find_task(captured_play["tasks"])
@@ -903,6 +1070,7 @@ class TestAsyncTaskExecution:
 # delegate_to on task resources
 # ---------------------------------------------------------------------------
 
+
 class TestDelegateTo:
     _HOST = {"host": "127.0.0.1", "port": 22, "connection": "local"}
     _DELEGATE = {"host": "10.0.0.99", "port": 22, "user": "deploy", "connection": "ssh"}
@@ -911,68 +1079,88 @@ class TestDelegateTo:
     def _find_task(compiled_blocks):
         for block in compiled_blocks:
             for t in block.block:
-                if t.action != 'meta':
+                if t.action != "meta":
                     return t
         return None
 
     def test_delegate_host_added_to_inventory(self):
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
-                captured['inventory'] = inventory
+                captured["inventory"] = inventory
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured['tasks'] = play.compile()
+                captured["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
-            _run_module(self._HOST, "ansible.builtin.ping", None,
-                        delegate_host_state=self._DELEGATE)
-        inv = captured['inventory']
-        delegate = inv.get_host('delegate')
+            _run_module(self._HOST, "ansible.builtin.ping", None, delegate_host_state=self._DELEGATE)
+        inv = captured["inventory"]
+        delegate = inv.get_host("delegate")
         assert delegate is not None
-        assert delegate.vars['ansible_host'] == '10.0.0.99'
-        assert delegate.vars['ansible_user'] == 'deploy'
+        assert delegate.vars["ansible_host"] == "10.0.0.99"
+        assert delegate.vars["ansible_user"] == "deploy"
 
     def test_delegate_to_in_task_dict(self):
         captured = {}
+
         class _CaptureTQM:
-            def __init__(self, **kw): self._callback_plugins = []
-            def load_callbacks(self): pass
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured['tasks'] = play.compile()
+                captured["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
-            _run_module(self._HOST, "ansible.builtin.ping", None,
-                        delegate_host_state=self._DELEGATE)
-        task = self._find_task(captured['tasks'])
+            _run_module(self._HOST, "ansible.builtin.ping", None, delegate_host_state=self._DELEGATE)
+        task = self._find_task(captured["tasks"])
         assert task is not None
-        assert task.delegate_to == 'delegate'
+        assert task.delegate_to == "delegate"
 
     def test_no_delegate_when_none(self):
         captured = {}
+
         class _CaptureTQM:
             def __init__(self, inventory, **kw):
-                captured['inventory'] = inventory
+                captured["inventory"] = inventory
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
-                captured['tasks'] = play.compile()
+                captured["tasks"] = play.compile()
                 for cb in self._callback_plugins:
-                    if hasattr(cb, 'result') and cb.result is None:
+                    if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
+
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None)
-        inv = captured['inventory']
-        assert inv.get_host('delegate') is None
-        task = self._find_task(captured['tasks'])
+        inv = captured["inventory"]
+        assert inv.get_host("delegate") is None
+        task = self._find_task(captured["tasks"])
         assert task.delegate_to is None
 
     def test_execute_resolves_delegate_host(self):
@@ -981,9 +1169,11 @@ class TestDelegateTo:
         prov = _provider(state={"h1": _host(), "h2": h2})
         inst = klass(prov)
         calls = []
+
         def _mock_run(host, module, args, **kwargs):
             calls.append(kwargs)
             return {"changed": False}
+
         with patch("terrible_provider.task_base._run_module", side_effect=_mock_run):
             inst._execute(Diagnostics(), {"host_id": "h1", "delegate_to_id": "h2"})
         assert calls[0]["delegate_host_state"]["host"] == "10.0.0.99"
@@ -1002,6 +1192,7 @@ class TestDelegateTo:
 # Vault secrets forwarding (_run_module)
 # ---------------------------------------------------------------------------
 
+
 class TestVaultSecretsInRunModule:
     _HOST = {"host": "127.0.0.1", "connection": "local"}
 
@@ -1012,12 +1203,17 @@ class TestVaultSecretsInRunModule:
             def __init__(self, loader, **kw):
                 captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
                     if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
 
         secrets = [("default", MagicMock())]
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
@@ -1031,12 +1227,17 @@ class TestVaultSecretsInRunModule:
             def __init__(self, loader, **kw):
                 captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 for cb in self._callback_plugins:
                     if hasattr(cb, "result") and cb.result is None:
                         cb.result = {"changed": False}
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
 
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
             _run_module(self._HOST, "ansible.builtin.ping", None)
@@ -1073,10 +1274,12 @@ class TestVaultSecretsInRunModule:
 # WinRM host inventory setup
 # ---------------------------------------------------------------------------
 
+
 class TestSetupHostInventoryWinRM:
     def _make_host(self):
-        from ansible.parsing.dataloader import DataLoader
         from ansible.inventory.manager import InventoryManager
+        from ansible.parsing.dataloader import DataLoader
+
         loader = DataLoader()
         inv = InventoryManager(loader=loader, sources="target,")
         return inv.get_host("target")
@@ -1104,10 +1307,14 @@ class TestSetupHostInventoryWinRM:
 
     def test_winrm_cert_validation(self):
         hobj = self._make_host()
-        _setup_host_inventory(hobj, {
-            "host": "win.example.com", "connection": "winrm",
-            "winrm_server_cert_validation": "ignore",
-        })
+        _setup_host_inventory(
+            hobj,
+            {
+                "host": "win.example.com",
+                "connection": "winrm",
+                "winrm_server_cert_validation": "ignore",
+            },
+        )
         assert hobj.vars["ansible_winrm_server_cert_validation"] == "ignore"
 
     def test_winrm_defaults_scheme_to_https(self):

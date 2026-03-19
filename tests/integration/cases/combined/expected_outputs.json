@@ -1,0 +1,15 @@
+{
+  "ping_result": "pong",
+  "ping_changed": false,
+  "marker_rc": 0,
+  "marker_changed": true,
+  "dir_path": "/tmp/terrible_test_dir",
+  "dir_changed": true,
+  "async_rc": 0,
+  "async_changed": true,
+  "delegate_rc": 0,
+  "delegate_changed": true,
+  "ds_ping_result": "pong",
+  "stat_file_exists": true,
+  "vault_decrypted": "terraform_vault_test_secret"
+}

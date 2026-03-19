@@ -1,9 +1,8 @@
 import uuid
-from typing import Optional
 
-from tf.schema import Schema, Attribute
-from tf.types import Bool, NormalizedJson, String, Number
-from tf.iface import Resource, CreateContext, ReadContext, UpdateContext, DeleteContext, ImportContext
+from tf.iface import CreateContext, DeleteContext, ImportContext, ReadContext, Resource, UpdateContext
+from tf.schema import Attribute, Schema
+from tf.types import Bool, NormalizedJson, Number, String
 
 
 class TerribleHost(Resource):
@@ -66,7 +65,7 @@ class TerribleHost(Resource):
                 Attribute(
                     "winrm_port",
                     Number(),
-                    description="WinRM port. Defaults to 5986 when connection is winrm. Requires: pip install terrible[winrm].",
+                    description="WinRM port. Defaults to 5986 when connection is winrm.",
                     optional=True,
                 ),
                 Attribute(
@@ -102,7 +101,7 @@ class TerribleHost(Resource):
     def __init__(self, provider):
         self._prov = provider
 
-    def create(self, ctx: CreateContext, planned: dict) -> Optional[dict]:
+    def create(self, ctx: CreateContext, planned: dict) -> dict | None:
         new_id = uuid.uuid4().hex
         state = {**planned, "id": new_id}
         if state.get("port") is None:
@@ -111,11 +110,11 @@ class TerribleHost(Resource):
         self._prov._save_state()
         return state
 
-    def read(self, ctx: ReadContext, current: dict) -> Optional[dict]:
+    def read(self, ctx: ReadContext, current: dict) -> dict | None:
         rid = current.get("id")
         return self._prov._state.get(rid)
 
-    def update(self, ctx: UpdateContext, current: dict, planned: dict) -> Optional[dict]:
+    def update(self, ctx: UpdateContext, current: dict, planned: dict) -> dict | None:
         rid = current["id"]
         state = {**planned, "id": rid}
         self._prov._state[rid] = state
@@ -127,5 +126,5 @@ class TerribleHost(Resource):
         self._prov._state.pop(rid, None)
         self._prov._save_state()
 
-    def import_(self, ctx: ImportContext, id: str) -> Optional[dict]:
+    def import_(self, ctx: ImportContext, id: str) -> dict | None:
         return self._prov._state.get(id)

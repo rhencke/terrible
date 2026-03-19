@@ -11,19 +11,17 @@ They focus on the encode/decode contract that differs from resources:
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from tf.schema import Attribute, Schema
-from tf.types import Bool, NormalizedJson, String
 from tf.iface import ReadDataContext
+from tf.schema import Attribute, Schema
+from tf.types import NormalizedJson, String
 from tf.utils import Diagnostics
 
 from terrible_provider.task_datasource import TerribleTaskDataSource
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_ds_class(attrs, return_attr_names=None, module_name="test.module"):
     """Build a minimal TerribleTaskDataSource subclass with the given schema."""
@@ -57,16 +55,19 @@ def _make_ctx():
 # NormalizedJson decode/encode round-trip
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizedJsonRoundTrip:
     """NormalizedJson inputs must be decoded before Ansible; outputs re-encoded."""
 
     def test_dict_input_is_decoded_for_ansible(self):
         """A NormalizedJson input arrives as a JSON string; Ansible must receive a dict."""
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("extra_vars", NormalizedJson(), optional=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("extra_vars", NormalizedJson(), optional=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         inst = DSClass(_make_provider())
         ctx, diags = _make_ctx()
 
@@ -115,11 +116,13 @@ class TestNormalizedJsonRoundTrip:
 
     def test_string_input_passes_through_unchanged(self):
         """Plain String inputs are not JSON-encoded and pass through as-is."""
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("path", String(), required=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("path", String(), required=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         inst = DSClass(_make_provider())
         ctx, diags = _make_ctx()
 
@@ -141,12 +144,15 @@ class TestNormalizedJsonRoundTrip:
 # Error handling
 # ---------------------------------------------------------------------------
 
+
 class TestErrorHandling:
     def test_host_not_found_returns_none(self):
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         prov = MagicMock()
         prov._state = {}  # no hosts
         inst = DSClass(prov)
@@ -158,10 +164,12 @@ class TestErrorHandling:
         assert diags.has_errors()
 
     def test_ansible_failure_returns_none(self):
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         inst = DSClass(_make_provider())
         ctx, diags = _make_ctx()
 
@@ -175,10 +183,12 @@ class TestErrorHandling:
         assert diags.has_errors()
 
     def test_unreachable_returns_none(self):
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         inst = DSClass(_make_provider())
         ctx, diags = _make_ctx()
 
@@ -196,14 +206,18 @@ class TestErrorHandling:
 # Successful read
 # ---------------------------------------------------------------------------
 
+
 class TestSuccessfulRead:
     def test_config_echoed_in_state(self):
         """Input config attributes are present in the returned state."""
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("ping", String(), computed=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ], return_attr_names=["ping"])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("ping", String(), computed=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ],
+            return_attr_names=["ping"],
+        )
         inst = DSClass(_make_provider())
         ctx, diags = _make_ctx()
 
@@ -219,10 +233,12 @@ class TestSuccessfulRead:
 
     def test_runs_in_check_mode(self):
         """_run_module must always be called with check_only=True."""
-        DSClass = _make_ds_class([
-            Attribute("host_id", String(), required=True),
-            Attribute("result", NormalizedJson(), computed=True),
-        ])
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("result", NormalizedJson(), computed=True),
+            ]
+        )
         inst = DSClass(_make_provider())
         ctx, _ = _make_ctx()
 
@@ -233,6 +249,7 @@ class TestSuccessfulRead:
         assert kwargs.get("check_only") is True
 
     def test_get_schema_returns_schema(self):
-        DSClass = _make_ds_class([Attribute("host_id", String(), required=True),
-                                   Attribute("result", NormalizedJson(), computed=True)])
+        DSClass = _make_ds_class(
+            [Attribute("host_id", String(), required=True), Attribute("result", NormalizedJson(), computed=True)]
+        )
         assert DSClass.get_schema() is DSClass._schema

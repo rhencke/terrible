@@ -20,12 +20,17 @@ install-provider = "terrible_provider.install:main"
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["terrible_provider*"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
     "pytest-timeout>=2.3.0",
     "pex>=2.20.0",
     "pytest-cov>=7.0.0",
+    "ruff>=0.11.0",
+    "ty>=0.0.1a7",
 ]
 
 [tool.pytest.ini_options]
@@ -43,3 +48,32 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["RUF012", "RUF005"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["SIM117"]
+
+[tool.ty.rules]
+# Ansible uses dynamic module attributes (e.g. constants.COLLECTIONS_PATHS)
+unresolved-attribute = "ignore"
+# Ansible callback base uses forward-ref type annotations ty can't resolve
+invalid-method-override = "ignore"
+# Ansible TQM expects InventoryData but InventoryManager is the standard way to pass it
+invalid-argument-type = "ignore"
+
+[[tool.ty.overrides]]
+# tf framework CRUD returns Optional[dict] but our code always returns dict;
+# tests legitimately subscript the result without None-checks.
+include = ["tests/**"]
+[tool.ty.overrides.rules]
+not-subscriptable = "ignore"
+unsupported-operator = "ignore"
+not-iterable = "ignore"
+invalid-assignment = "ignore"
