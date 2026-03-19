@@ -521,11 +521,23 @@ class TestReapWorkers:
         from terrible_provider.task_base import _reap_workers
 
         child = MagicMock()
+        child.is_alive.return_value = False
         with patch("multiprocessing.active_children", return_value=[child]):
             _reap_workers()
         child.terminate.assert_called_once()
         child.join.assert_called_once_with(timeout=5)
         child.close.assert_called_once()
+
+    def test_reap_skips_close_if_still_alive(self):
+        from terrible_provider.task_base import _reap_workers
+
+        child = MagicMock()
+        child.is_alive.return_value = True
+        with patch("multiprocessing.active_children", return_value=[child]):
+            _reap_workers()
+        child.terminate.assert_called_once()
+        child.join.assert_called_once_with(timeout=5)
+        child.close.assert_not_called()
 
     def test_reap_no_children_is_noop(self):
         from terrible_provider.task_base import _reap_workers

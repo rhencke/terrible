@@ -141,12 +141,20 @@ def _execute_plays(
                 run_additional_callbacks=False,
                 forks=1,
             )
-            tqm.has_dead_workers = lambda: False  # type: ignore[invalid-assignment]
+            tqm.has_dead_workers = lambda: False  # ty: ignore[invalid-assignment]
             tqm.load_callbacks()
             tqm._callback_plugins.append(cb)
+            n_plays = len(play_dicts)
             for play_dict in play_dicts:
                 play = Play().load(play_dict, variable_manager=vm, loader=loader)
+                result_count_before = len(cb.results)
                 tqm.run(play)
+                # If a worker died silently, no callback fires for the play.
+                if len(cb.results) == result_count_before:
+                    cb.any_failed = True
+            # Every play should have produced at least one callback result.
+            if len(cb.results) < n_plays:
+                cb.any_failed = True
         except Exception as exc:
             return {"failed": True, "msg": f"Ansible error: {exc}"}
         finally:
@@ -159,7 +167,11 @@ def _execute_plays(
             _ansible_context.CLIARGS = orig_cliargs
 
     last = cb.results[-1] if cb.results else {}
-    return {"changed": cb.any_changed, **last}
+    result = {"changed": cb.any_changed, **last}
+    if cb.any_failed and not result.get("failed"):
+        result["failed"] = True
+        result.setdefault("msg", "One or more plays failed or produced no result")
+    return result
 
 
 # ---------------------------------------------------------------------------

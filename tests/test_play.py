@@ -269,6 +269,66 @@ class TestExecutePlays:
         t.join()
         assert results == [{"changed": False}]
 
+    def test_silent_dead_worker_detected_as_failure(self):
+        """If a play produces no callback (dead worker), result should be failed."""
+
+        class _SilentTQM:
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                pass  # no callback fired — simulates dead worker
+
+            def cleanup(self):
+                pass
+
+        play_dict = {
+            "name": "p",
+            "hosts": "target",
+            "gather_facts": "no",
+            "tasks": [{"action": "ansible.builtin.ping"}],
+        }
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _SilentTQM):
+            result = _execute_plays(self._HOST, [play_dict])
+        assert result.get("failed") is True
+
+    def test_partial_dead_worker_detected(self):
+        """If only one of two plays produces a callback, result should be failed."""
+        call_count = 0
+
+        class _PartialTQM:
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    # First play succeeds
+                    r = MagicMock()
+                    r.result = {"changed": False}
+                    for cb in self._callback_plugins:
+                        if hasattr(cb, "results"):
+                            cb.v2_runner_on_ok(r)
+                # Second play: dead worker, no callback
+
+            def cleanup(self):
+                pass
+
+        plays = [
+            {"name": "p1", "hosts": "target", "gather_facts": "no", "tasks": []},
+            {"name": "p2", "hosts": "target", "gather_facts": "no", "tasks": []},
+        ]
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _PartialTQM):
+            result = _execute_plays(self._HOST, plays)
+        assert result.get("failed") is True
+
 
 # ---------------------------------------------------------------------------
 # _run_playbook

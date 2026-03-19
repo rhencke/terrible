@@ -156,7 +156,8 @@ def _reap_workers():
     for child in multiprocessing.active_children():
         child.terminate()
         child.join(timeout=5)
-        child.close()
+        if not child.is_alive():
+            child.close()
 
 
 def _run_module(
