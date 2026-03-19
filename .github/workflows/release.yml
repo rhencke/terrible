@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ── Stage 1: validate on all platforms ────────────────────────────────────
+  validate:
+    name: validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true   # one failure blocks the release
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+          - os: macos-13
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install OpenTofu
+        if: matrix.goos != 'windows'
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Unit tests (100% coverage required)
+        run: uv run pytest tests/ --ignore=tests/integration -q
+
+      - name: Integration tests
+        if: matrix.goos != 'windows'
+        run: make integration-test
+
+      - name: Build PyInstaller binary
+        run: uv run pyinstaller terrible.spec --distpath dist --workpath build/pyinstaller --noconfirm
+
+      - name: Determine binary name and zip path
+        id: names
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BINARY="terraform-provider-terrible_v${VERSION}"
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            BINARY="${BINARY}.exe"
+          fi
+          ZIP="terraform-provider-terrible_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
+          echo "binary=${BINARY}" >> "$GITHUB_OUTPUT"
+          echo "zip=${ZIP}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          DIST="dist/terraform-provider-terrible"
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            DIST="${DIST}.exe"
+          fi
+          mv "$DIST" "dist/${{ steps.names.outputs.binary }}"
+
+      - name: Zip binary
+        shell: bash
+        run: |
+          cd dist
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            7z a "../${{ steps.names.outputs.zip }}" "${{ steps.names.outputs.binary }}"
+          else
+            zip "../${{ steps.names.outputs.zip }}" "${{ steps.names.outputs.binary }}"
+          fi
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.names.outputs.zip }}
+          path: ${{ steps.names.outputs.zip }}
+          if-no-files-found: error
+
+  # ── Stage 2: publish (only if ALL validate jobs pass) ─────────────────────
+  publish:
+    name: publish
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all platform zips
+        uses: actions/download-artifact@v4
+        with:
+          path: zips
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd zips
+          sha256sum *.zip > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        env:
+          GPG_TTY: /dev/null
+
+      - name: Sign SHA256SUMS
+        run: |
+          cd zips
+          gpg --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --pinentry-mode loopback \
+              --detach-sign --armor --output SHA256SUMS.sig SHA256SUMS
+
+      - name: Upload release assets
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" zips/*.zip zips/SHA256SUMS zips/SHA256SUMS.sig
+        env:
+          GH_TOKEN: ${{ github.token }}

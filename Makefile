@@ -11,7 +11,7 @@ help:
 	@echo "  example-init           - run 'tofu init' in the example project"
 	@echo "  example-apply          - run 'tofu apply' in the example project (interactive)"
 	@echo "  example-fresh          - reinstall provider, wipe state, and auto-apply the example"
-	@echo "  build-binary           - build a standalone pex binary (terraform-provider-terrible)"
+	@echo "  build-binary           - build a standalone PyInstaller binary (terraform-provider-terrible)"
 	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
 
 test:
@@ -42,11 +42,8 @@ example-fresh: install-provider
 	cd examples/terraform_provider && tofu apply -auto-approve
 
 build-binary:
-	uv export --format requirements-txt --no-dev --no-hashes | grep -v '^-e' > /tmp/terrible-requirements.txt
-	uv run pex -r /tmp/terrible-requirements.txt . \
-	  -o terraform-provider-terrible \
-	  -m terrible_provider.cli:main
-	@echo "Binary built: ./terraform-provider-terrible"
+	uv run pyinstaller terrible.spec --distpath dist --workpath build/pyinstaller --noconfirm
+	@echo "Binary built: ./dist/terraform-provider-terrible"
 
 release:
 	@test -n "$(VERSION)" || (echo "Usage: make release VERSION=x.y.z"; exit 1)

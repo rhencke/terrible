@@ -149,14 +149,15 @@ Before cutting any release:
 4. Working tree is clean (`git status` shows nothing).
 5. `pyproject.toml` version matches the release version.
 
-### Cutting a release (pre-0.5.0 — no registry publishing yet)
+### Cutting a release
 
 Use `scripts/release.sh` or the `make release` target. Never tag or create
 GitHub releases manually — the script enforces the checklist, runs tests,
-creates the annotated tag, pushes it, and creates the GitHub release.
+creates the annotated tag, pushes it, creates the GitHub release, then watches
+the Actions workflow.
 
 ```bash
-scripts/release.sh 0.4.0 <<'EOF'
+scripts/release.sh 0.5.0 <<'EOF'
 Short title line (becomes the release title)
 
 ## New features
@@ -167,18 +168,11 @@ Short title line (becomes the release title)
 EOF
 
 # Equivalent:
-make release VERSION=0.4.0   # reads notes from stdin
+make release VERSION=0.5.0   # reads notes from stdin
 ```
 
-Release notes must be non-empty and follow the format above. The first
-non-empty line becomes the release title on GitHub.
-
-After pushing, verify CI passes:
-
-```bash
-gh run list --limit 3
-gh run watch <run-id> --exit-status
-```
+Release notes must be non-empty. The first non-empty line becomes the release
+title on GitHub.
 
 ### Cutting a release (0.5.0+ — Terraform Registry publishing)
 
@@ -188,13 +182,13 @@ The `release.yml` workflow enforces this with two sequential stages:
 
 **Stage 1 — validate (all must pass before stage 2 runs):**
 - Unit tests (`uv run pytest -q`, 100% coverage) on all 5 platform runners
-- Integration tests on all 5 platform runners
+- Integration tests on all 5 platform runners (skipped on Windows — Ansible doesn't support Windows control nodes)
 - PyInstaller binary builds on all 5 platform runners
 
 **Stage 2 — publish (runs only if stage 1 is fully green):**
 - Merge all platform zips
 - Generate `SHA256SUMS`
-- GPG-sign (`SHA256SUMS.sig`)
+- GPG-sign (`SHA256SUMS.sig`) using `GPG_PRIVATE_KEY` + `GPG_PASSPHRASE` secrets
 - Upload all assets to GitHub release
 - registry.terraform.io auto-detects within ~10 minutes
 
@@ -203,21 +197,48 @@ failure — blocks the entire release. No partial publishing.
 
 To cut a release:
 
-1. Run pre-release checklist above.
-2. Push the tag:
-   ```bash
-   git tag -a v0.5.0 -m "v0.5.0 — <title>"
-   git push origin v0.5.0
-   ```
-3. Monitor the workflow:
-   ```bash
-   gh run watch --exit-status
-   ```
-4. If all green, the release publishes automatically. If anything fails,
-   delete the tag, fix the issue, and re-tag.
+```bash
+scripts/release.sh 0.5.0 <<'EOF'
+Short title line (becomes the release title)
 
-`scripts/release.sh` (issue #21) will wrap steps 2–3 and surface failures
-clearly.
+## New features
+- bullet points here
+EOF
+```
+
+The script runs tests, tags, pushes, creates the GitHub release, then watches
+the Actions workflow and reports success or failure. If the workflow fails,
+the script prints instructions to roll back the tag and release.
+
+### GPG key setup (one-time)
+
+The Terraform Registry requires releases to be GPG-signed. Required secrets
+in GitHub → Settings → Secrets and variables → Actions:
+
+- `GPG_PRIVATE_KEY` — ASCII-armored private key (`gpg --armor --export-secret-keys KEY_ID`)
+- `GPG_PASSPHRASE` — passphrase for the key
+
+To generate a new key:
+```bash
+gpg --batch --gen-key <<EOF
+%no-protection
+Key-Type: RSA
+Key-Length: 4096
+Subkey-Type: RSA
+Subkey-Length: 4096
+Name-Real: terraform-provider-terrible releases
+Name-Email: releases@example.com
+Expire-Date: 0
+EOF
+```
+
+### GPG key rotation
+
+1. Generate a new key (see above).
+2. Export and update `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` in GitHub Secrets.
+3. Register the new public key on registry.terraform.io (Settings → GPG Keys).
+4. Leave the old key registered — the registry validates historical releases against it.
+5. Delete the old key from the registry only after all old releases are superseded.
 
 ### Milestones and issues
 
@@ -227,7 +248,7 @@ issues.
 
 To check:
 ```bash
-gh api repos/rhencke/terrible/milestones --jq '.[] | {title, open_issues, closed_issues}'
+gh api repos/rhencke/terraform-provider-terrible/milestones --jq '.[] | {title, open_issues, closed_issues}'
 ```
 
 ## Pre-commit Hook

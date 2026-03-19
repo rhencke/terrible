@@ -26,6 +26,7 @@ dev = [
     "pytest-timeout>=2.3.0",
     "pex>=2.20.0",
     "pytest-cov>=7.0.0",
+    "pyinstaller>=6.0.0",
 ]
 
 [tool.pytest.ini_options]
