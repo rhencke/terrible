@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Generate Terraform Registry documentation using tfplugindocs.
+#
+# Requires:
+#   - tofu or terraform in PATH
+#   - tfplugindocs in PATH or TFPLUGINDOCS env var
+#   - Provider installed locally (make install-provider)
+#
+# Usage:
+#   scripts/generate-docs.sh
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+TFPLUGINDOCS="${TFPLUGINDOCS:-tfplugindocs}"
+TF="${TF:-$(command -v tofu 2>/dev/null || command -v terraform 2>/dev/null)}"
+
+if [[ -z "${TF}" ]]; then
+    echo "ERROR: tofu or terraform not found in PATH" >&2
+    exit 1
+fi
+
+if ! command -v "${TFPLUGINDOCS}" &>/dev/null; then
+    echo "ERROR: tfplugindocs not found. Install with:" >&2
+    echo "  curl -fsSL https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.20.0/tfplugindocs_0.20.0_linux_amd64.zip | ..." >&2
+    exit 1
+fi
+
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "${TMPDIR}"' EXIT
+
+# Generate schema using local provider installation via a temp Terraform config
+TFDIR="${TMPDIR}/tfschema"
+mkdir -p "${TFDIR}"
+
+cat > "${TFDIR}/main.tf" << 'EOF'
+terraform {
+  required_providers {
+    terrible = { source = "local/terrible/terrible" }
+  }
+}
+provider "terrible" {}
+EOF
+
+echo "Initialising Terraform config to get provider schema..."
+"${TF}" -chdir="${TFDIR}" init -no-color >/dev/null
+
+echo "Exporting provider schema..."
+"${TF}" -chdir="${TFDIR}" providers schema -json > "${TMPDIR}/schema.json"
+
+# Rekey schema from local/terrible/terrible → registry.terraform.io/hashicorp/terrible
+# (tfplugindocs resolves "terrible" → registry.terraform.io/hashicorp/terrible internally)
+python3 - "${TMPDIR}/schema.json" "${TMPDIR}/schema-rekeyed.json" << 'PYEOF'
+import json, sys
+with open(sys.argv[1]) as f:
+    schema = json.load(f)
+ps = schema["provider_schemas"]
+ps["registry.terraform.io/hashicorp/terrible"] = ps.pop("local/terrible/terrible")
+with open(sys.argv[2], "w") as f:
+    json.dump(schema, f)
+PYEOF
+
+echo "Generating docs..."
+cd "${REPO_DIR}"
+"${TFPLUGINDOCS}" generate \
+    --provider-name "terrible" \
+    --providers-schema "${TMPDIR}/schema-rekeyed.json" \
+    --rendered-provider-name "terrible"
+
+echo "Docs generated in docs/"

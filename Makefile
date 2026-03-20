@@ -1,4 +1,4 @@
-.PHONY: help test integration-test test-all install-hooks install-provider run-provider example-init example-apply example-fresh build-binary release
+.PHONY: help test integration-test test-all install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
 
 help:
 	@echo "Makefile targets:"
@@ -12,6 +12,7 @@ help:
 	@echo "  example-apply          - run 'tofu apply' in the example project (interactive)"
 	@echo "  example-fresh          - reinstall provider, wipe state, and auto-apply the example"
 	@echo "  build-binary           - build a standalone PyInstaller binary (terraform-provider-terrible)"
+	@echo "  docs                   - generate Terraform Registry docs into docs/ (requires install-provider)"
 	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
 
 test:
@@ -44,6 +45,9 @@ example-fresh: install-provider
 build-binary:
 	uv run pyinstaller terrible.spec --distpath dist --workpath build/pyinstaller --noconfirm
 	@echo "Binary built: ./dist/terraform-provider-terrible"
+
+docs: install-provider
+	TFPLUGINDOCS=/tmp/tfplugindocs scripts/generate-docs.sh
 
 release:
 	@test -n "$(VERSION)" || (echo "Usage: make release VERSION=x.y.z"; exit 1)

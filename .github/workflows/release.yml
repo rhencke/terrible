@@ -86,10 +86,63 @@ jobs:
           path: ${{ steps.names.outputs.zip }}
           if-no-files-found: error
 
-  # ── Stage 2: publish (only if ALL validate jobs pass) ─────────────────────
+  # ── Stage 2: generate docs (runs on ubuntu-latest after all validate jobs pass) ──
+  docs:
+    name: generate docs
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Install provider locally
+        run: make install-provider
+
+      - name: Install tfplugindocs
+        run: |
+          curl -fsSL https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.20.0/tfplugindocs_0.20.0_linux_amd64.zip -o /tmp/tfplugindocs.zip
+          unzip -o /tmp/tfplugindocs.zip tfplugindocs -d /usr/local/bin
+
+      - name: Generate docs
+        run: scripts/generate-docs.sh
+
+      - name: Commit updated docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if git diff --cached --quiet; then
+            echo "No doc changes to commit"
+          else
+            git commit -m "docs: regenerate Terraform Registry docs for ${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+          fi
+
+  # ── Stage 3: publish (only if ALL validate and docs jobs pass) ─────────────
   publish:
     name: publish
-    needs: validate
+    needs: [validate, docs]
     runs-on: ubuntu-latest
     permissions:
       contents: write
