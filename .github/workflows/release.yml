@@ -97,6 +97,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create GitHub release if it does not exist
+        run: |
+          if ! gh release view "${GITHUB_REF_NAME}" &>/dev/null; then
+            NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+            TITLE="$(echo "${NOTES}" | awk 'NF{print; exit}')"
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "${TITLE:-${GITHUB_REF_NAME}}" \
+              --notes "${NOTES:-${GITHUB_REF_NAME}}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Download all platform zips
         uses: actions/download-artifact@v4
         with:
