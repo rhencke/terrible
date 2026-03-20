@@ -68,5 +68,5 @@ when adding features.
 
 ## License
 
-MIT
+GPLv3
 
