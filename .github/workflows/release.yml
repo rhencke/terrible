@@ -40,7 +40,7 @@ jobs:
 
       # OpenTofu has no arm64 Linux binary in the setup action yet
       - name: Install OpenTofu
-        if: matrix.goarch != 'arm64'
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         uses: opentofu/setup-opentofu@v1
         with:
           tofu_wrapper: false
@@ -52,7 +52,7 @@ jobs:
         run: uv run pytest tests/ --ignore=tests/integration -q
 
       - name: Integration tests
-        if: matrix.goarch != 'arm64'
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: make integration-test
 
       - name: Build PyInstaller binary
