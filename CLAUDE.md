@@ -170,5 +170,6 @@ Runs:
 - Always use `scripts/release.sh` when tagging a release — never tag or create GitHub releases manually.
 - Always check CI after every push (`gh run list --limit 3`) and report the result.
 - Always close GitHub issues when implementing their features.
+- Always reply to and resolve PR review comments as you address them — don't merge with unresolved conversations.
 - Always tag releases with release notes — never leave notes empty.
 - Before the first commit in a session, check if `.git/hooks/pre-commit` exists. If not, run `scripts/install-hooks.sh`.
