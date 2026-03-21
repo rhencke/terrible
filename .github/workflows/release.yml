@@ -106,9 +106,12 @@ jobs:
 
       - name: Generate SHA256SUMS
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           cd zips
-          sha256sum *.zip > SHA256SUMS
-          cat SHA256SUMS
+          cp "${GITHUB_WORKSPACE}/terraform-registry-manifest.json" \
+             "terraform-provider-terrible_${VERSION}_manifest.json"
+          sha256sum *.zip *_manifest.json > "terraform-provider-terrible_${VERSION}_SHA256SUMS"
+          cat "terraform-provider-terrible_${VERSION}_SHA256SUMS"
 
       - name: Import GPG key
         run: |
@@ -118,10 +121,13 @@ jobs:
 
       - name: Sign SHA256SUMS
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           cd zips
           gpg --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
               --pinentry-mode loopback \
-              --detach-sign --armor --output SHA256SUMS.sig SHA256SUMS
+              --detach-sign \
+              --output "terraform-provider-terrible_${VERSION}_SHA256SUMS.sig" \
+              "terraform-provider-terrible_${VERSION}_SHA256SUMS"
 
       - name: Create release and upload assets
         run: |
@@ -131,7 +137,7 @@ jobs:
             --title "${TITLE:-${GITHUB_REF_NAME}}" \
             --notes "${NOTES:-${GITHUB_REF_NAME}}" \
             --draft \
-            zips/*.zip zips/SHA256SUMS zips/SHA256SUMS.sig
+            zips/*.zip zips/*_manifest.json zips/*_SHA256SUMS zips/*_SHA256SUMS.sig
           gh release edit "${GITHUB_REF_NAME}" --draft=false
         env:
           GH_TOKEN: ${{ github.token }}
