@@ -34,14 +34,10 @@ EXAMPLES_DIR = _REPO_ROOT / "examples"
 
 
 def _collect_cases() -> list[Path]:
-    cases = sorted(
-        d for d in CASES_DIR.iterdir()
-        if d.is_dir() and (d / "main.tf").exists()
-    )
+    cases = sorted(d for d in CASES_DIR.iterdir() if d.is_dir() and (d / "main.tf").exists())
     # Examples that ship a verify.sh are integration-testable
     examples = sorted(
-        d for d in EXAMPLES_DIR.iterdir()
-        if d.is_dir() and (d / "main.tf").exists() and (d / "verify.sh").exists()
+        d for d in EXAMPLES_DIR.iterdir() if d.is_dir() and (d / "main.tf").exists() and (d / "verify.sh").exists()
     )
     return cases + examples
 
@@ -82,9 +78,16 @@ def test_case(case_dir, tmp_path, provider_install):
     # Copy case to isolated workspace so each test has independent TF state.
     # Ignore Terraform artifacts that may exist from manual runs.
     ws = tmp_path / name
-    shutil.copytree(str(case_dir), str(ws), ignore=shutil.ignore_patterns(
-        ".terraform", ".terraform.lock.hcl", "terraform.tfstate*", "terrible_state.json",
-    ))
+    shutil.copytree(
+        str(case_dir),
+        str(ws),
+        ignore=shutil.ignore_patterns(
+            ".terraform",
+            ".terraform.lock.hcl",
+            "terraform.tfstate*",
+            "terrible_state.json",
+        ),
+    )
 
     # --- Arrange ---
     print(f"[{name}] cleanup (pre)", flush=True)
@@ -94,8 +97,12 @@ def test_case(case_dir, tmp_path, provider_install):
 
     try:
         # --- Act ---
-        _tf("apply", [tf_bin, "apply", "-auto-approve", "-no-color",
-                      "-var", f"state_file={state_file}"], ws=ws, env=tf_env)
+        _tf(
+            "apply",
+            [tf_bin, "apply", "-auto-approve", "-no-color", "-var", f"state_file={state_file}"],
+            ws=ws,
+            env=tf_env,
+        )
 
         # --- Assert: side effects landed on the host ---
         print(f"[{name}] verify.sh", flush=True)
@@ -107,25 +114,35 @@ def test_case(case_dir, tmp_path, provider_install):
             expected = json.loads(expected_file.read_text())
             raw = subprocess.run(
                 [tf_bin, "output", "-json", "-no-color"],
-                cwd=str(ws), env=tf_env, check=True, capture_output=True, text=True,
+                cwd=str(ws),
+                env=tf_env,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             actual = {k: v["value"] for k, v in json.loads(raw.stdout).items()}
             for key, want in expected.items():
-                assert actual.get(key) == want, (
-                    f"[{name}] output {key!r}: expected {want!r}, got {actual.get(key)!r}"
-                )
+                assert actual.get(key) == want, f"[{name}] output {key!r}: expected {want!r}, got {actual.get(key)!r}"
 
         # --- Assert: no drift on a second plan ---
-        result = _tf("plan (idempotency)", [tf_bin, "plan", "-detailed-exitcode", "-no-color",
-                                            "-var", f"state_file={state_file}"],
-                     ws=ws, env=tf_env, check=False)
+        result = _tf(
+            "plan (idempotency)",
+            [tf_bin, "plan", "-detailed-exitcode", "-no-color", "-var", f"state_file={state_file}"],
+            ws=ws,
+            env=tf_env,
+            check=False,
+        )
         assert result.returncode == 0, (
-            f"[{name}] Plan after apply should show no changes "
-            f"(got exit {result.returncode})"
+            f"[{name}] Plan after apply should show no changes (got exit {result.returncode})"
         )
 
     finally:
-        _tf("destroy", [tf_bin, "destroy", "-auto-approve", "-no-color",
-                        "-var", f"state_file={state_file}"], ws=ws, env=tf_env, check=False)
+        _tf(
+            "destroy",
+            [tf_bin, "destroy", "-auto-approve", "-no-color", "-var", f"state_file={state_file}"],
+            ws=ws,
+            env=tf_env,
+            check=False,
+        )
         print(f"[{name}] cleanup (post)", flush=True)
         _run_script(case_dir, "cleanup.sh")

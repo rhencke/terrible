@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+echo "pre-commit: running make lint..."
+make lint
+
+echo "pre-commit: running make typecheck..."
+make typecheck
+
 echo "pre-commit: running make test-all..."
 make test-all
 

@@ -31,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Lint
+        run: make lint
+
+      - name: Type check
+        run: make typecheck
+
       - name: Run all tests (unit + integration)
         run: make test-all
 

@@ -28,6 +28,7 @@ PROVIDER_NS = "terrible"
 PROVIDER_TYPE = "terrible"
 PROVIDER_VERSION = "0.0.1"
 
+
 def _find_provider_entrypoint() -> Path:
     # Prefer the venv-local binary; fall back to wherever it's on PATH.
     venv_bin = REPO_ROOT / ".venv" / "bin" / "terraform-provider-terrible"
@@ -37,9 +38,9 @@ def _find_provider_entrypoint() -> Path:
     if on_path:
         return Path(on_path)
     raise RuntimeError(
-        "terraform-provider-terrible not found in .venv/bin/ or on PATH.\n"
-        "Run 'uv sync' or 'pip install -e .' first."
+        "terraform-provider-terrible not found in .venv/bin/ or on PATH.\nRun 'uv sync' or 'pip install -e .' first."
     )
+
 
 _PROVIDER_ENTRYPOINT = _find_provider_entrypoint()
 _REATTACH_RE = _re.compile(r"TF_REATTACH_PROVIDERS='(.+)'")
@@ -114,15 +115,15 @@ def provider_install(tmp_path_factory, provider_process):
 
     tfrc = tmp_path_factory.mktemp("tfrc") / ".terraformrc"
     tfrc.write_text(
-        f'provider_installation {{\n'
-        f'  filesystem_mirror {{\n'
+        f"provider_installation {{\n"
+        f"  filesystem_mirror {{\n"
         f'    path    = "{plugin_dir}"\n'
         f'    include = ["{PROVIDER_HOST}/{PROVIDER_NS}/{PROVIDER_TYPE}"]\n'
-        f'  }}\n'
-        f'  direct {{\n'
+        f"  }}\n"
+        f"  direct {{\n"
         f'    exclude = ["{PROVIDER_HOST}/{PROVIDER_NS}/{PROVIDER_TYPE}"]\n'
-        f'  }}\n'
-        f'}}\n'
+        f"  }}\n"
+        f"}}\n"
     )
 
     tf_bin = _find_tf()
