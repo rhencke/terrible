@@ -71,7 +71,7 @@ def provider_process():
     proc = subprocess.Popen(
         [str(_PROVIDER_ENTRYPOINT), "--dev"],
         stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,  # PyInstaller binary writes to stderr; merge into stdout
         text=True,
         env=env,
     )
