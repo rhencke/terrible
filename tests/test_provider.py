@@ -1,16 +1,13 @@
 """Unit tests for TerribleProvider."""
 
 import json
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from tf.utils import Diagnostics
 
-from terrible_provider.provider import TerribleProvider
 from terrible_provider.host import TerribleHost
+from terrible_provider.provider import TerribleProvider
 from terrible_provider.vault import TerribleVault
 
 
@@ -79,13 +76,16 @@ class TestConfigure:
 
     def test_configure_mkdir_failure_logs_warning(self, tmp_path, caplog):
         import logging
+
         prov = TerribleProvider.__new__(TerribleProvider)
         # Use a non-existent subdir so configure_provider tries to call mkdir
         prov._state_file = tmp_path / "newdir" / "state.json"
         prov._state = {}
-        with patch.object(Path, "mkdir", side_effect=OSError("denied")):
-            with caplog.at_level(logging.WARNING, logger="terrible_provider.provider"):
-                prov.configure_provider(_diags(), {})
+        with (
+            patch.object(Path, "mkdir", side_effect=OSError("denied")),
+            caplog.at_level(logging.WARNING, logger="terrible_provider.provider"),
+        ):
+            prov.configure_provider(_diags(), {})
         assert any("denied" in r.message for r in caplog.records)
 
 
@@ -234,10 +234,13 @@ class TestInit:
 class TestSaveStateError:
     def test_save_state_logs_error_on_failure(self, tmp_path, caplog):
         import logging
+
         prov = TerribleProvider.__new__(TerribleProvider)
         prov._state_file = tmp_path / "state.json"
         prov._state = {"x": {}}
-        with patch.object(Path, "write_text", side_effect=OSError("no space")):
-            with caplog.at_level(logging.ERROR, logger="terrible_provider.provider"):
-                prov._save_state()
+        with (
+            patch.object(Path, "write_text", side_effect=OSError("no space")),
+            caplog.at_level(logging.ERROR, logger="terrible_provider.provider"),
+        ):
+            prov._save_state()
         assert any("no space" in r.message for r in caplog.records)

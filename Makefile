@@ -1,4 +1,4 @@
-.PHONY: help test integration-test test-all install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
+.PHONY: help test integration-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
 
 help:
 	@echo "Makefile targets:"
@@ -12,8 +12,22 @@ help:
 	@echo "  example-apply          - run 'tofu apply' in the example project (interactive)"
 	@echo "  example-fresh          - reinstall provider, wipe state, and auto-apply the example"
 	@echo "  build-binary           - build a standalone PyInstaller binary (terraform-provider-terrible)"
+	@echo "  lint                   - check code with ruff (no fixes)"
+	@echo "  typecheck              - check types with ty"
+	@echo "  format                 - auto-format code with ruff (explicit action)"
 	@echo "  docs                   - generate Terraform Registry docs into docs/ (requires install-provider)"
 	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
+
+lint:
+	uv run ruff check terrible_provider/ tests/
+	uv run ruff format --check terrible_provider/ tests/
+
+typecheck:
+	uv run ty check terrible_provider/
+
+format:
+	uv run ruff format terrible_provider/ tests/
+	uv run ruff check --fix terrible_provider/ tests/
 
 test:
 	uv run pytest tests/ --ignore=tests/integration -q

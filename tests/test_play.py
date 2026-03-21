@@ -1,30 +1,33 @@
 """Unit tests for terrible_provider.play — TerriblePlaybook, TerribleRole, runners."""
 
 import threading
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from tf.iface import (
-    CreateContext, DeleteContext, ImportContext, ReadContext, UpdateContext, PlanContext,
+    CreateContext,
+    DeleteContext,
+    ImportContext,
+    PlanContext,
+    ReadContext,
+    UpdateContext,
 )
 from tf.types import Unknown
 from tf.utils import Diagnostics
 
 from terrible_provider.play import (
-    _make_multi_callback,
-    _execute_plays,
-    _run_playbook,
-    _run_role,
     TerriblePlaybook,
     TerribleRole,
+    _execute_plays,
+    _make_multi_callback,
+    _run_playbook,
+    _run_role,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _ctx(klass, changed_fields=None):
     diags = Diagnostics()
@@ -46,6 +49,7 @@ def _host():
 
 def _make_mock_tqm(result):
     """TQM mock that injects *result* via v2_runner_on_ok into every _MultiCB callback."""
+
     class _MockTQM:
         def __init__(self, **kw):
             self._callback_plugins = []
@@ -72,6 +76,7 @@ def _make_mock_tqm(result):
 # ---------------------------------------------------------------------------
 # _make_multi_callback
 # ---------------------------------------------------------------------------
+
 
 class TestMakeMultiCallback:
     def test_initial_state(self):
@@ -127,16 +132,24 @@ class TestMakeMultiCallback:
 # _execute_plays / _run_playbook / _run_role — shared TQM path
 # ---------------------------------------------------------------------------
 
+
 class TestExecutePlays:
     _HOST = {"host": "127.0.0.1", "connection": "local"}
 
     def test_success_returns_last_result(self):
         MockTQM = _make_mock_tqm({"changed": True, "rc": 0})
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
-            result = _execute_plays(self._HOST, [{
-                "name": "p", "hosts": "target", "gather_facts": "no",
-                "tasks": [{"action": "ansible.builtin.ping"}],
-            }])
+            result = _execute_plays(
+                self._HOST,
+                [
+                    {
+                        "name": "p",
+                        "hosts": "target",
+                        "gather_facts": "no",
+                        "tasks": [{"action": "ansible.builtin.ping"}],
+                    }
+                ],
+            )
         assert result["changed"] is True
         assert result["rc"] == 0
 
@@ -150,14 +163,28 @@ class TestExecutePlays:
         class _ErrTQM:
             def __init__(self, **kw):
                 self._callback_plugins = []
-            def load_callbacks(self): pass
-            def run(self, play): raise RuntimeError("exploded")
-            def cleanup(self): pass
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                raise RuntimeError("exploded")
+
+            def cleanup(self):
+                pass
 
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _ErrTQM):
-            result = _execute_plays(self._HOST, [{
-                "name": "p", "hosts": "target", "gather_facts": "no", "tasks": [],
-            }])
+            result = _execute_plays(
+                self._HOST,
+                [
+                    {
+                        "name": "p",
+                        "hosts": "target",
+                        "gather_facts": "no",
+                        "tasks": [],
+                    }
+                ],
+            )
         assert result["failed"] is True
         assert "exploded" in result["msg"]
 
@@ -168,14 +195,19 @@ class TestExecutePlays:
             def __init__(self, variable_manager, **kw):
                 captured["extra_vars"] = getattr(variable_manager, "_extra_vars", None)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 r = MagicMock()
                 r.result = {"changed": False}
                 for cb in self._callback_plugins:
                     if hasattr(cb, "results"):
                         cb.v2_runner_on_ok(r)
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
 
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _execute_plays(self._HOST, [], extra_vars={"MY_VAR": "hello"})
@@ -193,14 +225,23 @@ class TestExecutePlays:
                 # CLIArgs normalises lists to tuples; check membership instead
                 cliargs_seen["tags"] = list(dict(_ctx.CLIARGS).get("tags") or [])
                 cliargs_seen["skip_tags"] = list(dict(_ctx.CLIARGS).get("skip_tags") or [])
-            def load_callbacks(self): pass
-            def run(self, play): pass
-            def cleanup(self): pass
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                pass
+
+            def cleanup(self):
+                pass
 
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _execute_plays(
-                self._HOST, [],
-                timeout=42, tags=["web"], skip_tags=["slow"],
+                self._HOST,
+                [],
+                timeout=42,
+                tags=["web"],
+                skip_tags=["slow"],
             )
         assert cliargs_seen["timeout"] == 42
         assert cliargs_seen["tags"] == ["web"]
@@ -208,6 +249,7 @@ class TestExecutePlays:
 
     def test_cliargs_restored_after_call(self):
         from ansible import context as _ctx
+
         orig = dict(_ctx.CLIARGS).get("timeout")
         MockTQM = _make_mock_tqm({"changed": False})
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
@@ -232,6 +274,7 @@ class TestExecutePlays:
 # _run_playbook
 # ---------------------------------------------------------------------------
 
+
 class TestRunPlaybook:
     _HOST = {"host": "127.0.0.1", "connection": "local"}
 
@@ -249,10 +292,7 @@ class TestRunPlaybook:
 
     def test_success(self, tmp_path):
         pb = tmp_path / "site.yml"
-        pb.write_text(
-            "- name: test\n  hosts: all\n  gather_facts: no\n"
-            "  tasks:\n    - action: ansible.builtin.ping\n"
-        )
+        pb.write_text("- name: test\n  hosts: all\n  gather_facts: no\n  tasks:\n    - action: ansible.builtin.ping\n")
         MockTQM = _make_mock_tqm({"changed": False, "ping": "pong"})
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
             result = _run_playbook(self._HOST, str(pb))
@@ -267,10 +307,15 @@ class TestRunPlaybook:
         class _CaptureTQM:
             def __init__(self, **kw):
                 self._callback_plugins = []
-            def load_callbacks(self): pass
+
+            def load_callbacks(self):
+                pass
+
             def run(self, play):
                 captured["hosts"] = play._ds.get("hosts")
-            def cleanup(self): pass
+
+            def cleanup(self):
+                pass
 
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
             _run_playbook(self._HOST, str(pb))
@@ -290,8 +335,10 @@ class TestRunPlaybook:
 # _run_role
 # ---------------------------------------------------------------------------
 
+
 class TestRunRole:
     """Play().load() would fail for a non-existent role, so we mock it out."""
+
     _HOST = {"host": "127.0.0.1", "connection": "local"}
     _MOCK_PLAY = MagicMock()
 
@@ -299,15 +346,15 @@ class TestRunRole:
         """Apply both TQM and Play patches so role resolution is bypassed."""
         return (
             patch("ansible.executor.task_queue_manager.TaskQueueManager", tqm_cls),
-            patch("terrible_provider.play.Play", return_value=MagicMock(
-                load=MagicMock(return_value=self._MOCK_PLAY)
-            )),
+            patch("terrible_provider.play.Play", return_value=MagicMock(load=MagicMock(return_value=self._MOCK_PLAY))),
         )
 
     def test_success(self):
         MockTQM = _make_mock_tqm({"changed": False})
-        with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM), \
-             patch("ansible.playbook.play.Play") as MockPlay:
+        with (
+            patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM),
+            patch("ansible.playbook.play.Play") as MockPlay,
+        ):
             MockPlay.return_value.load.return_value = self._MOCK_PLAY
             result = _run_role(self._HOST, "myrole")
         assert result["changed"] is False
@@ -319,12 +366,20 @@ class TestRunRole:
             def __init__(self, variable_manager, **kw):
                 captured["extra_vars"] = getattr(variable_manager, "_extra_vars", None)
                 self._callback_plugins = []
-            def load_callbacks(self): pass
-            def run(self, play): pass
-            def cleanup(self): pass
 
-        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM), \
-             patch("ansible.playbook.play.Play") as MockPlay:
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                pass
+
+            def cleanup(self):
+                pass
+
+        with (
+            patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM),
+            patch("ansible.playbook.play.Play") as MockPlay,
+        ):
             MockPlay.return_value.load.return_value = self._MOCK_PLAY
             _run_role(self._HOST, "myrole", extra_vars={"DB_HOST": "localhost"})
         assert captured["extra_vars"] == {"DB_HOST": "localhost"}
@@ -333,12 +388,20 @@ class TestRunRole:
         class _ErrTQM:
             def __init__(self, **kw):
                 self._callback_plugins = []
-            def load_callbacks(self): pass
-            def run(self, play): raise RuntimeError("role error")
-            def cleanup(self): pass
 
-        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _ErrTQM), \
-             patch("ansible.playbook.play.Play") as MockPlay:
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                raise RuntimeError("role error")
+
+            def cleanup(self):
+                pass
+
+        with (
+            patch("ansible.executor.task_queue_manager.TaskQueueManager", _ErrTQM),
+            patch("ansible.playbook.play.Play") as MockPlay,
+        ):
             MockPlay.return_value.load.return_value = self._MOCK_PLAY
             result = _run_role(self._HOST, "myrole")
         assert result["failed"] is True
@@ -349,8 +412,10 @@ class TestRunRole:
         results = []
 
         def _run():
-            with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM), \
-                 patch("ansible.playbook.play.Play") as MockPlay:
+            with (
+                patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM),
+                patch("ansible.playbook.play.Play") as MockPlay,
+            ):
                 MockPlay.return_value.load.return_value = self._MOCK_PLAY
                 results.append(_run_role(self._HOST, "myrole"))
 
@@ -364,6 +429,7 @@ class TestRunRole:
 # TerriblePlaybook — CRUD, plan, schema
 # ---------------------------------------------------------------------------
 
+
 class TestTerriblePlaybook:
     def _inst(self, state=None):
         return TerriblePlaybook(_provider(state=state or {}))
@@ -371,8 +437,18 @@ class TestTerriblePlaybook:
     # Schema
     def test_schema_has_expected_attrs(self):
         names = {a.name for a in TerriblePlaybook.get_schema().attributes}
-        assert {"id", "host_id", "playbook", "result", "changed",
-                "extra_vars", "tags", "skip_tags", "timeout", "ignore_errors"} <= names
+        assert {
+            "id",
+            "host_id",
+            "playbook",
+            "result",
+            "changed",
+            "extra_vars",
+            "tags",
+            "skip_tags",
+            "timeout",
+            "ignore_errors",
+        } <= names
 
     def test_get_name(self):
         assert TerriblePlaybook.get_name() == "playbook"
@@ -386,16 +462,14 @@ class TestTerriblePlaybook:
 
     def test_plan_existing_no_change(self):
         inst = self._inst()
-        current = {"id": "rid", "host_id": "h1", "playbook": "site.yml",
-                   "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "playbook": "site.yml", "result": {}, "changed": False}
         planned = {"host_id": "h1", "playbook": "site.yml", "result": {}, "changed": False}
         result = inst.plan(_ctx(PlanContext), current, planned)
         assert result["id"] == "rid"
 
     def test_plan_existing_input_changed(self):
         inst = self._inst()
-        current = {"id": "rid", "host_id": "h1", "playbook": "old.yml",
-                   "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "playbook": "old.yml", "result": {}, "changed": False}
         planned = {"host_id": "h1", "playbook": "new.yml", "result": {}, "changed": False}
         result = inst.plan(_ctx(PlanContext), current, planned)
         assert result["result"] is Unknown
@@ -465,8 +539,7 @@ class TestTerriblePlaybook:
         prov = _provider(state={"h1": _host()})
         inst = TerriblePlaybook(prov)
         diags = Diagnostics()
-        with patch("terrible_provider.play._run_playbook",
-                   return_value={"failed": True, "msg": "boom"}):
+        with patch("terrible_provider.play._run_playbook", return_value={"failed": True, "msg": "boom"}):
             inst._execute(diags, {"host_id": "h1", "playbook": "site.yml", "ignore_errors": True})
         assert not diags.has_errors()
 
@@ -474,8 +547,7 @@ class TestTerriblePlaybook:
         prov = _provider(state={"h1": _host()})
         inst = TerriblePlaybook(prov)
         diags = Diagnostics()
-        with patch("terrible_provider.play._run_playbook",
-                   return_value={"failed": True, "msg": "boom"}):
+        with patch("terrible_provider.play._run_playbook", return_value={"failed": True, "msg": "boom"}):
             inst._execute(diags, {"host_id": "h1", "playbook": "site.yml"})
         assert diags.has_errors()
 
@@ -483,8 +555,7 @@ class TestTerriblePlaybook:
         prov = _provider(state={"h1": _host()})
         inst = TerriblePlaybook(prov)
         diags = Diagnostics()
-        with patch("terrible_provider.play._run_playbook",
-                   return_value={"unreachable": True, "msg": "no route"}):
+        with patch("terrible_provider.play._run_playbook", return_value={"unreachable": True, "msg": "no route"}):
             inst._execute(diags, {"host_id": "h1", "playbook": "site.yml"})
         assert diags.has_errors()
 
@@ -493,6 +564,7 @@ class TestTerriblePlaybook:
 # TerribleRole — CRUD, plan, schema
 # ---------------------------------------------------------------------------
 
+
 class TestTerribleRole:
     def _inst(self, state=None):
         return TerribleRole(_provider(state=state or {}))
@@ -500,8 +572,18 @@ class TestTerribleRole:
     # Schema
     def test_schema_has_expected_attrs(self):
         names = {a.name for a in TerribleRole.get_schema().attributes}
-        assert {"id", "host_id", "role", "result", "changed",
-                "extra_vars", "tags", "skip_tags", "timeout", "ignore_errors"} <= names
+        assert {
+            "id",
+            "host_id",
+            "role",
+            "result",
+            "changed",
+            "extra_vars",
+            "tags",
+            "skip_tags",
+            "timeout",
+            "ignore_errors",
+        } <= names
 
     def test_get_name(self):
         assert TerribleRole.get_name() == "role"
@@ -592,8 +674,7 @@ class TestTerribleRole:
         prov = _provider(state={"h1": _host()})
         inst = TerribleRole(prov)
         diags = Diagnostics()
-        with patch("terrible_provider.play._run_role",
-                   return_value={"failed": True, "msg": "boom"}):
+        with patch("terrible_provider.play._run_role", return_value={"failed": True, "msg": "boom"}):
             inst._execute(diags, {"host_id": "h1", "role": "myrole", "ignore_errors": True})
         assert not diags.has_errors()
 
@@ -601,8 +682,7 @@ class TestTerribleRole:
         prov = _provider(state={"h1": _host()})
         inst = TerribleRole(prov)
         diags = Diagnostics()
-        with patch("terrible_provider.play._run_role",
-                   return_value={"failed": True, "msg": "boom"}):
+        with patch("terrible_provider.play._run_role", return_value={"failed": True, "msg": "boom"}):
             inst._execute(diags, {"host_id": "h1", "role": "myrole"})
         assert diags.has_errors()
 
@@ -615,6 +695,7 @@ class TestTerribleRole:
 # Vault secrets forwarding
 # ---------------------------------------------------------------------------
 
+
 class TestVaultSecretsForwarding:
     """Verify vault_secrets are forwarded from provider through to runners."""
 
@@ -625,14 +706,21 @@ class TestVaultSecretsForwarding:
             def __init__(self, loader, **kw):
                 captured["vault_secrets"] = getattr(loader, "_vault_secrets", "NOT_SET")
                 self._callback_plugins = []
-            def load_callbacks(self): pass
-            def run(self, play): pass
-            def cleanup(self): pass
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                pass
+
+            def cleanup(self):
+                pass
 
         secrets = [("default", MagicMock())]
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureLoaderTQM):
             _execute_plays(
-                {"host": "127.0.0.1", "connection": "local"}, [],
+                {"host": "127.0.0.1", "connection": "local"},
+                [],
                 vault_secrets=secrets,
             )
         assert captured["vault_secrets"] is not None
@@ -664,8 +752,10 @@ class TestPlayResourceBaseAbstract:
 
         class _Concrete(_PlayResourceBase):
             _schema = None
+
             @classmethod
-            def get_name(cls): return "test"
+            def get_name(cls):
+                return "test"
 
         inst = _Concrete.__new__(_Concrete)
         with pytest.raises(NotImplementedError):

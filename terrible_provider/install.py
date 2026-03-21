@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Install the local provider into a terraform plugin directory.
 
     Mirrors the behavior of `scripts/install_provider.py` but from the package

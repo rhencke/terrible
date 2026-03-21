@@ -1,8 +1,6 @@
 """Unit tests for terrible_provider.vault — TerribleVault data source."""
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from tf.iface import ReadContext
 from tf.utils import Diagnostics
@@ -45,6 +43,7 @@ class TestTerribleVaultRead:
     def _encrypt(self, plaintext, password):
         """Encrypt plaintext using Ansible Vault."""
         from ansible.parsing.vault import VaultLib, VaultSecret
+
         secrets = [("default", VaultSecret(password.encode("utf-8")))]
         vault = VaultLib(secrets=secrets)
         return vault.encrypt(plaintext.encode("utf-8")).decode("utf-8")
@@ -55,6 +54,7 @@ class TestTerribleVaultRead:
         ciphertext = self._encrypt(plaintext, password)
 
         from ansible.parsing.vault import VaultSecret
+
         secrets = [("default", VaultSecret(password.encode("utf-8")))]
 
         prov = _provider(vault_secrets=secrets)
@@ -79,6 +79,7 @@ class TestTerribleVaultRead:
 
     def test_bad_ciphertext(self):
         from ansible.parsing.vault import VaultSecret
+
         secrets = [("default", VaultSecret(b"password"))]
 
         prov = _provider(vault_secrets=secrets)
@@ -93,6 +94,7 @@ class TestTerribleVaultRead:
         ciphertext = self._encrypt("secret", "correct_password")
 
         from ansible.parsing.vault import VaultSecret
+
         secrets = [("default", VaultSecret(b"wrong_password"))]
 
         prov = _provider(vault_secrets=secrets)

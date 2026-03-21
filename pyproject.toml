@@ -30,6 +30,8 @@ dev = [
     "pex>=2.20.0",
     "pytest-cov>=7.0.0",
     "pyinstaller>=6.0.0",
+    "ruff>=0.9.0",
+    "ty>=0.0.1a1",
 ]
 
 [tool.pytest.ini_options]
@@ -47,3 +49,14 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "SIM"]
+ignore = []
+
+[tool.ty]
+# strict mode — all checks enabled

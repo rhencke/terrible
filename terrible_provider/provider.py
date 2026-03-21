@@ -2,17 +2,17 @@ import json
 import logging
 from pathlib import Path
 
-log = logging.getLogger(__name__)
-
-from tf.schema import Schema, Attribute
+from tf.iface import Provider
+from tf.schema import Attribute, Schema
 from tf.types import String
 from tf.utils import Diagnostics
-from tf.iface import Provider
 
+from .discovery import discover_task_resources
 from .host import TerribleHost
 from .play import TerriblePlaybook, TerribleRole
 from .vault import TerribleVault
-from .discovery import discover_task_resources
+
+log = logging.getLogger(__name__)
 
 
 class TerribleProvider(Provider):
@@ -45,13 +45,24 @@ class TerribleProvider(Provider):
         return "terrible_"
 
     def get_provider_schema(self, diags: Diagnostics) -> Schema:
-        return Schema(attributes=[
-            Attribute("state_file", String(), optional=True),
-            Attribute("vault_password", String(), optional=True, sensitive=True,
-                      description="Vault password for decrypting Ansible Vault data."),
-            Attribute("vault_password_file", String(), optional=True,
-                      description="Path to a file containing the vault password."),
-        ])
+        return Schema(
+            attributes=[
+                Attribute("state_file", String(), optional=True),
+                Attribute(
+                    "vault_password",
+                    String(),
+                    optional=True,
+                    sensitive=True,
+                    description="Vault password for decrypting Ansible Vault data.",
+                ),
+                Attribute(
+                    "vault_password_file",
+                    String(),
+                    optional=True,
+                    description="Path to a file containing the vault password.",
+                ),
+            ]
+        )
 
     def full_name(self) -> str:
         return "local/terrible/terrible"
@@ -87,12 +98,13 @@ class TerribleProvider(Provider):
                     return
             if password:
                 from ansible.parsing.vault import VaultSecret
+
                 self._vault_secrets = [("default", VaultSecret(password.encode("utf-8")))]
 
     def get_data_sources(self) -> list:
         self._ensure_discovered()
-        return [TerribleVault, *self._task_datasources]
+        return [TerribleVault, *self._task_datasources]  # type: ignore[misc]
 
     def get_resources(self) -> list:
         self._ensure_discovered()
-        return [TerribleHost, TerriblePlaybook, TerribleRole, *self._task_resources]
+        return [TerribleHost, TerriblePlaybook, TerribleRole, *self._task_resources]  # type: ignore[misc]

@@ -1,24 +1,18 @@
 """Unit tests for discovery schema-building and class-factory functions."""
 
-import json
 import sqlite3
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from tf.types import Bool, NormalizedJson, Number, String
+from tf.types import Bool, NormalizedJson, Number
 
 from terrible_provider.discovery import (
     _DOC_RE,
-    _RET_RE,
     _build_datasource_schema,
     _build_schema,
     _cache_db_path,
     _check_mode_support,
-    _coercers_for,
     _fqcn_for_path,
     _get_installed_collections,
     _load_cached,
@@ -32,7 +26,6 @@ from terrible_provider.discovery import (
 )
 from terrible_provider.task_base import TerribleTaskBase
 from terrible_provider.task_datasource import TerribleTaskDataSource
-
 
 # ---------------------------------------------------------------------------
 # Fake module file content for filesystem-walk tests
@@ -74,6 +67,7 @@ RETURN = """
 # _resource_name_for
 # ---------------------------------------------------------------------------
 
+
 class TestResourceNameFor:
     def test_builtin_strips_prefix(self):
         assert _resource_name_for("ansible.builtin.ping") == "ping"
@@ -88,6 +82,7 @@ class TestResourceNameFor:
 # ---------------------------------------------------------------------------
 # _build_schema
 # ---------------------------------------------------------------------------
+
 
 class TestBuildSchema:
     def test_required_option_is_required(self):
@@ -152,6 +147,7 @@ class TestBuildSchema:
 # _build_datasource_schema
 # ---------------------------------------------------------------------------
 
+
 class TestBuildDatasourceSchema:
     def test_has_host_id_and_result(self):
         schema, _ = _build_datasource_schema({}, {})
@@ -182,6 +178,7 @@ class TestBuildDatasourceSchema:
 # ---------------------------------------------------------------------------
 # make_task_class
 # ---------------------------------------------------------------------------
+
 
 class TestMakeTaskClass:
     def test_is_subclass_of_task_base(self):
@@ -217,6 +214,7 @@ class TestMakeTaskClass:
 # make_datasource_class
 # ---------------------------------------------------------------------------
 
+
 class TestMakeDatasourceClass:
     def test_is_subclass_of_datasource(self):
         klass = make_datasource_class("ansible.builtin.ping", {}, {})
@@ -242,6 +240,7 @@ class TestMakeDatasourceClass:
 # _check_mode_support
 # ---------------------------------------------------------------------------
 
+
 class TestCheckModeSupport:
     def test_full_support(self):
         doc = {"attributes": {"check_mode": {"support": "full"}}}
@@ -262,6 +261,7 @@ class TestCheckModeSupport:
 # _fqcn_for_path
 # ---------------------------------------------------------------------------
 
+
 class TestFqcnForPath:
     def test_ansible_builtin(self):
         assert _fqcn_for_path("/path/to/ansible/modules/ping.py") == "ansible.builtin.ping"
@@ -277,6 +277,7 @@ class TestFqcnForPath:
 # ---------------------------------------------------------------------------
 # _parse_yaml_block
 # ---------------------------------------------------------------------------
+
 
 class TestParseYamlBlock:
     def test_parses_doc_block(self):
@@ -297,6 +298,7 @@ class TestParseYamlBlock:
 # _coercers_for — Bool branch
 # ---------------------------------------------------------------------------
 
+
 class TestCoercersFor:
     def test_bool_return_attr_gets_coercer(self):
         klass = make_task_class("ansible.builtin.x", {}, {"flag": {"type": "bool"}})
@@ -313,6 +315,7 @@ class TestCoercersFor:
 # ---------------------------------------------------------------------------
 # _build_datasource_schema — branch coverage
 # ---------------------------------------------------------------------------
+
 
 class TestBuildDatasourceSchemaExtraBranches:
     def test_framework_name_in_options_is_skipped(self):
@@ -333,6 +336,7 @@ class TestBuildDatasourceSchemaExtraBranches:
 # ---------------------------------------------------------------------------
 # Cache helpers
 # ---------------------------------------------------------------------------
+
 
 class TestCacheHelpers:
     def test_cache_db_path_returns_path(self, tmp_path, monkeypatch):
@@ -369,8 +373,9 @@ class TestCacheHelpers:
                 returns_json TEXT, check_mode TEXT, PRIMARY KEY (ansible_version, fqcn)
             )
         """)
-        db.execute("INSERT INTO discovery_cache VALUES (?,?,?,?,?)",
-                   ("2.99", "ansible.builtin.ping", "{}", "{}", "full"))
+        db.execute(
+            "INSERT INTO discovery_cache VALUES (?,?,?,?,?)", ("2.99", "ansible.builtin.ping", "{}", "{}", "full")
+        )
         db.commit()
         resources, datasources = _load_cached(db, "2.99")
         assert len(resources) == 1
@@ -385,8 +390,9 @@ class TestCacheHelpers:
                 returns_json TEXT, check_mode TEXT, PRIMARY KEY (ansible_version, fqcn)
             )
         """)
-        db.execute("INSERT INTO discovery_cache VALUES (?,?,?,?,?)",
-                   ("2.99", "ansible.builtin.bad", "not json", "{}", "none"))
+        db.execute(
+            "INSERT INTO discovery_cache VALUES (?,?,?,?,?)", ("2.99", "ansible.builtin.bad", "not json", "{}", "none")
+        )
         db.commit()
         resources, datasources = _load_cached(db, "2.99")
         assert resources == []
@@ -413,8 +419,9 @@ class TestCacheHelpers:
                 returns_json TEXT, check_mode TEXT, PRIMARY KEY (ansible_version, fqcn)
             )
         """)
-        db.execute("INSERT INTO discovery_cache VALUES (?,?,?,?,?)",
-                   ("1.0", "ansible.builtin.ping", "{}", "{}", "none"))
+        db.execute(
+            "INSERT INTO discovery_cache VALUES (?,?,?,?,?)", ("1.0", "ansible.builtin.ping", "{}", "{}", "none")
+        )
         db.commit()
         _save_cache(db, "2.99", [])
         rows = db.execute("SELECT * FROM discovery_cache").fetchall()
@@ -426,12 +433,15 @@ class TestCacheHelpers:
 # discover_task_resources
 # ---------------------------------------------------------------------------
 
+
 class TestDiscoverTaskResources:
     def test_cache_hit_returns_cached(self):
         fake_class = MagicMock()
         db_mock = MagicMock()
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", return_value=([fake_class], [])):
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", return_value=([fake_class], [])),
+        ):
             resources, datasources = discover_task_resources()
         assert resources == [fake_class]
         assert datasources == []
@@ -439,10 +449,13 @@ class TestDiscoverTaskResources:
     def test_cache_miss_empty_walk(self):
         db_mock = MagicMock()
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", return_value=None), \
-             patch("terrible_provider.discovery._save_cache") as mock_save, \
-             patch.object(loader.module_loader, "all", return_value=[]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", return_value=None),
+            patch("terrible_provider.discovery._save_cache") as mock_save,
+            patch.object(loader.module_loader, "all", return_value=[]),
+        ):
             resources, datasources = discover_task_resources()
         assert resources == []
         assert datasources == []
@@ -450,8 +463,11 @@ class TestDiscoverTaskResources:
 
     def test_cache_open_exception_still_walks(self):
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("disk full")), \
-             patch.object(loader.module_loader, "all", return_value=[]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("disk full")),
+            patch.object(loader.module_loader, "all", return_value=[]),
+        ):
             resources, datasources = discover_task_resources()
         assert resources == []
 
@@ -464,9 +480,12 @@ class TestDiscoverTaskResources:
     def test_cache_load_raises_closes_db(self):
         db_mock = MagicMock()
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", side_effect=RuntimeError("load failed")), \
-             patch.object(loader.module_loader, "all", return_value=[]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", side_effect=RuntimeError("load failed")),
+            patch.object(loader.module_loader, "all", return_value=[]),
+        ):
             discover_task_resources()
         db_mock.close.assert_called()
 
@@ -474,9 +493,12 @@ class TestDiscoverTaskResources:
         db_mock = MagicMock()
         db_mock.close.side_effect = OSError("cannot close")
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", side_effect=RuntimeError("load failed")), \
-             patch.object(loader.module_loader, "all", return_value=[]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", side_effect=RuntimeError("load failed")),
+            patch.object(loader.module_loader, "all", return_value=[]),
+        ):
             discover_task_resources()  # Must not raise despite close failing
 
     def test_walk_valid_module_full_check_mode(self, tmp_path):
@@ -485,10 +507,13 @@ class TestDiscoverTaskResources:
         (mod_dir / "fakemod.py").write_text(_FAKE_MODULE_FULL)
         db_mock = MagicMock()
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", return_value=None), \
-             patch("terrible_provider.discovery._save_cache") as mock_save, \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "fakemod.py")]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", return_value=None),
+            patch("terrible_provider.discovery._save_cache") as mock_save,
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "fakemod.py")]),
+        ):
             resources, datasources = discover_task_resources()
         assert len(resources) == 1
         assert resources[0].get_name() == "fakemod"
@@ -500,8 +525,11 @@ class TestDiscoverTaskResources:
         mod_dir.mkdir(parents=True)
         (mod_dir / "nocheck.py").write_text(_FAKE_MODULE_NONE)
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "nocheck.py")]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "nocheck.py")]),
+        ):
             resources, datasources = discover_task_resources()
         assert len(resources) == 1
         assert datasources == []
@@ -511,15 +539,21 @@ class TestDiscoverTaskResources:
         mod_dir.mkdir(parents=True)
         (mod_dir / "_private.py").write_text(_FAKE_MODULE_FULL)
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "_private.py")]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "_private.py")]),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
     def test_walk_skips_non_py_and_empty_paths(self, tmp_path):
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=["", None, "/some/file.pyc"]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=["", None, "/some/file.pyc"]),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
@@ -528,8 +562,11 @@ class TestDiscoverTaskResources:
         unknown.parent.mkdir(parents=True)
         unknown.write_text(_FAKE_MODULE_FULL)
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(unknown)]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(unknown)]),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
@@ -539,8 +576,11 @@ class TestDiscoverTaskResources:
         mod_dir.mkdir(parents=True)
         nonexistent = str(mod_dir / "ghost.py")
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[nonexistent]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[nonexistent]),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
@@ -549,8 +589,11 @@ class TestDiscoverTaskResources:
         mod_dir.mkdir(parents=True)
         (mod_dir / "nodoc.py").write_text("# No documentation block here\n")
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "nodoc.py")]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "nodoc.py")]),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
@@ -559,9 +602,12 @@ class TestDiscoverTaskResources:
         mod_dir.mkdir(parents=True)
         (mod_dir / "badmod.py").write_text(_FAKE_MODULE_FULL)
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "badmod.py")]), \
-             patch("terrible_provider.discovery.make_task_class", side_effect=ValueError("bad class")):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "badmod.py")]),
+            patch("terrible_provider.discovery.make_task_class", side_effect=ValueError("bad class")),
+        ):
             resources, _ = discover_task_resources()
         assert resources == []
 
@@ -571,31 +617,42 @@ class TestDiscoverTaskResources:
         (mod_dir / "goodmod.py").write_text(_FAKE_MODULE_FULL)
         db_mock = MagicMock()
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", return_value=None), \
-             patch("terrible_provider.discovery._save_cache", side_effect=Exception("disk full")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "goodmod.py")]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", return_value=None),
+            patch("terrible_provider.discovery._save_cache", side_effect=Exception("disk full")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "goodmod.py")]),
+        ):
             discover_task_resources()  # Must not raise
 
     def test_finally_db_close_exception_handled(self):
         db_mock = MagicMock()
         db_mock.close.side_effect = OSError("final close failed")
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", return_value=db_mock), \
-             patch("terrible_provider.discovery._load_cached", return_value=None), \
-             patch("terrible_provider.discovery._save_cache"), \
-             patch.object(loader.module_loader, "all", return_value=[]):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", return_value=db_mock),
+            patch("terrible_provider.discovery._load_cached", return_value=None),
+            patch("terrible_provider.discovery._save_cache"),
+            patch.object(loader.module_loader, "all", return_value=[]),
+        ):
             discover_task_resources()  # Must not raise
 
     def test_installed_collection_with_no_modules_warns(self, tmp_path, caplog):
-        import ansible.plugins.loader as loader
         import logging
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[]), \
-             patch("terrible_provider.discovery._get_installed_collections",
-                   return_value={"community.general", "community.crypto"}):
-            with caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"):
-                discover_task_resources()
+
+        import ansible.plugins.loader as loader
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[]),
+            patch(
+                "terrible_provider.discovery._get_installed_collections",
+                return_value={"community.general", "community.crypto"},
+            ),caplog.at_level(logging.WARNING, logger="terrible_provider.discovery")
+        ):
+            discover_task_resources()
         warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
         assert any("community.general" in m for m in warned)
         assert any("community.crypto" in m for m in warned)
@@ -604,29 +661,35 @@ class TestDiscoverTaskResources:
         mod_dir = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
         mod_dir.mkdir(parents=True)
         (mod_dir / "ping.py").write_text(_FAKE_MODULE_NONE)
-        import ansible.plugins.loader as loader
         import logging
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "ping.py")]), \
-             patch("terrible_provider.discovery._get_installed_collections",
-                   return_value={"community.general"}):
-            with caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"):
-                discover_task_resources()
+
+        import ansible.plugins.loader as loader
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "ping.py")]),
+            patch("terrible_provider.discovery._get_installed_collections", return_value={"community.general"}),
+            caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"),
+        ):
+            discover_task_resources()
         warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
         assert not any("community.general" in m for m in warned)
 
     def test_collection_presence_check_exception_handled(self, caplog):
         import ansible.plugins.loader as loader
-        with patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")), \
-             patch.object(loader.module_loader, "all", return_value=[]), \
-             patch("terrible_provider.discovery._get_installed_collections",
-                   side_effect=RuntimeError("boom")):
+
+        with (
+            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
+            patch.object(loader.module_loader, "all", return_value=[]),
+            patch("terrible_provider.discovery._get_installed_collections", side_effect=RuntimeError("boom")),
+        ):
             discover_task_resources()  # Must not raise
 
 
 # ---------------------------------------------------------------------------
 # _get_installed_collections
 # ---------------------------------------------------------------------------
+
 
 class TestGetInstalledCollections:
     def test_empty_paths_returns_empty(self):

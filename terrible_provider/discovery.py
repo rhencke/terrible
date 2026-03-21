@@ -9,20 +9,19 @@ dynamically subclass TerribleTaskBase for each discovered task type.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
 import re
 import sqlite3
 from pathlib import Path
-from typing import Optional
 
 import yaml
-
-from tf.schema import Schema, Attribute
+from tf.schema import Attribute, Schema
 from tf.types import Bool, NormalizedJson, Number, String
 
-from .task_base import TerribleTaskBase, _MODULE_TIMEOUT
+from .task_base import _MODULE_TIMEOUT, TerribleTaskBase
 from .task_datasource import TerribleTaskDataSource
 
 log = logging.getLogger(__name__)
@@ -138,20 +137,16 @@ _DS_FRAMEWORK_ATTRS = [
 ]
 _DS_FRAMEWORK_NAMES = {a.name for a in _DS_FRAMEWORK_ATTRS}
 
-_DOC_RE = re.compile(r'^DOCUMENTATION\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
-_RET_RE = re.compile(r'^RETURN\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}', re.DOTALL | re.MULTILINE)
+_DOC_RE = re.compile(r"^DOCUMENTATION\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}", re.DOTALL | re.MULTILINE)
+_RET_RE = re.compile(r"^RETURN\s*=\s*[ru]?[\'\"]{3}(.*?)[\'\"]{3}", re.DOTALL | re.MULTILINE)
 
 
 def _check_mode_support(doc: dict) -> str:
     """Return 'full', 'partial', or 'none' from DOCUMENTATION attributes block."""
-    return (
-        doc.get("attributes", {})
-           .get("check_mode", {})
-           .get("support", "none")
-    )
+    return doc.get("attributes", {}).get("check_mode", {}).get("support", "none")
 
 
-def _fqcn_for_path(path: str) -> Optional[str]:
+def _fqcn_for_path(path: str) -> str | None:
     directory = os.path.dirname(path)
     shortname = os.path.splitext(os.path.basename(path))[0]
     if _ANSIBLE_BUILTIN_MODULES.match(directory):
@@ -162,7 +157,7 @@ def _fqcn_for_path(path: str) -> Optional[str]:
     return None
 
 
-def _parse_yaml_block(source: str, regex: re.Pattern) -> Optional[dict]:
+def _parse_yaml_block(source: str, regex: re.Pattern) -> dict | None:
     m = regex.search(source)
     if not m:
         return None
@@ -239,7 +234,7 @@ def _build_schema(options: dict, returns: dict) -> tuple[Schema, set[str]]:
 
 def _resource_name_for(fqcn: str) -> str:
     if fqcn.startswith("ansible.builtin."):
-        fqcn = fqcn[len("ansible.builtin."):]
+        fqcn = fqcn[len("ansible.builtin.") :]
     return fqcn.replace(".", "_").replace("-", "_")
 
 
@@ -274,9 +269,10 @@ def _coercers_for(schema: Schema, return_names: set[str]) -> dict:
 
 
 def _make_get_name(name: str):
-    @classmethod  # type: ignore[misc]
+    @classmethod
     def get_name(cls) -> str:
         return name
+
     return get_name
 
 
@@ -361,7 +357,8 @@ def _get_installed_collections(collection_paths=None) -> set[str]:
     if collection_paths is None:
         try:
             import ansible.constants as C
-            collection_paths = C.COLLECTIONS_PATHS or []
+
+            collection_paths = C.COLLECTIONS_PATHS or []  # type: ignore[attr-defined]
         except ImportError:
             return set()
 
@@ -405,7 +402,7 @@ def _open_cache() -> sqlite3.Connection:
     return db
 
 
-def _load_cached(db: sqlite3.Connection, ansible_version: str) -> Optional[tuple[list[type], list[type]]]:
+def _load_cached(db: sqlite3.Connection, ansible_version: str) -> tuple[list[type], list[type]] | None:
     rows = db.execute(
         "SELECT fqcn, options_json, returns_json, check_mode FROM discovery_cache WHERE ansible_version = ?",
         (ansible_version,),
@@ -465,16 +462,16 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
             resources, datasources = cached
             log.info(
                 "Loaded %d Ansible task types (%d data sources) from cache (ansible %s)",
-                len(resources), len(datasources), ansible_version,
+                len(resources),
+                len(datasources),
+                ansible_version,
             )
             return resources, datasources
     except Exception as exc:
         log.debug("Discovery cache unavailable: %s", exc)
         if db is not None:
-            try:
+            with contextlib.suppress(Exception):
                 db.close()
-            except Exception:
-                pass
         db = None
 
     # Cache miss — do the full filesystem walk.
@@ -520,9 +517,7 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
 
         # Warn about installed collections that contributed no discoverable modules.
         seen_collections = {
-            ".".join(fqcn.split(".")[:2])
-            for fqcn in seen_fqcns
-            if not fqcn.startswith("ansible.builtin.")
+            ".".join(fqcn.split(".")[:2]) for fqcn in seen_fqcns if not fqcn.startswith("ansible.builtin.")
         }
         try:
             for coll in sorted(_get_installed_collections() - seen_collections):
@@ -544,9 +539,7 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
                 log.debug("Failed to save discovery cache: %s", exc)
     finally:
         if db is not None:
-            try:
+            with contextlib.suppress(Exception):
                 db.close()
-            except Exception:
-                pass
 
     return resources, datasources
