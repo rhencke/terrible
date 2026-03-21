@@ -221,3 +221,22 @@ jobs:
         run: gh release edit "${GITHUB_REF_NAME}" --draft=false
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # ── Cleanup: delete draft if binary validation failed ─────────────────────
+  # Draft releases are invisible to the registry, so it is safe to delete them.
+  # The tag remains; cut a new patch version to retry.
+  cleanup_on_failure:
+    name: cleanup on failure
+    needs: validate_binary
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Delete draft release
+        run: |
+          echo "Binary validation failed — deleting draft release ${GITHUB_REF_NAME}."
+          gh release delete "${GITHUB_REF_NAME}" --yes
+        env:
+          GH_TOKEN: ${{ github.token }}
