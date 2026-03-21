@@ -173,4 +173,5 @@ Runs:
 - Always close GitHub issues when implementing their features.
 - Always resolve PR review threads (via GraphQL `resolveReviewThread` mutation) as you address them — replying is not enough. Don't merge with unresolved conversations.
 - Always tag releases with release notes — never leave notes empty.
+- **Never delete tags or releases.** Tags and releases are immutable once pushed. Deleting them triggers GitHub tag-protection rules that permanently block recreation of the same ref name. If a release workflow fails, fix the workflow and cut a new patch version instead.
 - Before the first commit in a session, check if `.git/hooks/pre-commit` exists. If not, run `scripts/install-hooks.sh`.
