@@ -7,12 +7,12 @@
 #   EOF
 #
 # The script will:
-#   1. Verify the working tree is clean
+#   1. Verify on main branch, in sync with origin/main, and working tree is clean
 #   2. Verify pyproject.toml version matches VERSION
 #   3. Run the full test suite
 #   4. Create an annotated git tag vVERSION and push it
-#   5. Create the GitHub release (assets uploaded by the Actions release workflow)
-#   6. Wait for and report the release workflow result
+#   5. Wait for the Actions release workflow to build and publish assets
+#   6. Report the release URL
 #
 # Requirements: git, uv, gh (GitHub CLI authenticated)
 
@@ -20,6 +20,24 @@ set -euo pipefail
 
 VERSION="${1:?Usage: $0 VERSION  (release notes read from stdin)}"
 TAG="v${VERSION}"
+
+# Verify on main branch
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "${CURRENT_BRANCH}" != "main" ]]; then
+    echo "ERROR: not on main branch (currently on '${CURRENT_BRANCH}')." >&2
+    exit 1
+fi
+
+# Fetch and verify in sync with origin/main
+git fetch origin main
+LOCAL="$(git rev-parse HEAD)"
+REMOTE="$(git rev-parse origin/main)"
+if [[ "${LOCAL}" != "${REMOTE}" ]]; then
+    echo "ERROR: local main is not in sync with origin/main." >&2
+    echo "       local:  ${LOCAL}" >&2
+    echo "       remote: ${REMOTE}" >&2
+    exit 1
+fi
 
 # Verify clean working tree
 if [[ -n "$(git status --porcelain)" ]]; then

@@ -225,6 +225,9 @@ terraform-provider-terrible
 # VS Code workspace settings
 .vscode/
 
-# Claude Code project-local settings
+# Claude Code project-local settings and ephemeral state
 .claude/settings.json
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/plans/
+.claude/memory/
