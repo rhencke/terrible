@@ -650,7 +650,8 @@ class TestDiscoverTaskResources:
             patch(
                 "terrible_provider.discovery._get_installed_collections",
                 return_value={"community.general", "community.crypto"},
-            ),caplog.at_level(logging.WARNING, logger="terrible_provider.discovery")
+            ),
+            caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"),
         ):
             discover_task_resources()
         warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
