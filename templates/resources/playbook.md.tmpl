@@ -1,0 +1,23 @@
+---
+page_title: "{{.Type}} {{.Name}} Resource - {{.ProviderName}}"
+subcategory: ""
+description: |-
+  {{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}} {{.Name}} (Resource)
+
+> **Deprecated:** `terrible_playbook` will be removed in a future release.
+> For playbook execution, use the
+> [ansible/ansible](https://registry.terraform.io/providers/ansible/ansible/latest/docs)
+> provider instead.
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}

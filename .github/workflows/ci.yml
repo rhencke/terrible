@@ -34,15 +34,5 @@ jobs:
       - name: Run all tests (unit + integration)
         run: make test-all
 
-      - name: Install tfplugindocs
-        run: |
-          curl -fsSL https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.20.0/tfplugindocs_0.20.0_linux_amd64.zip -o /tmp/tfplugindocs.zip
-          unzip -o /tmp/tfplugindocs.zip tfplugindocs -d /usr/local/bin
-
       - name: Check docs are up to date
-        run: |
-          make install-provider docs
-          if ! git diff --exit-code docs/; then
-            echo "ERROR: docs/ is stale — run 'make docs' and commit the result."
-            exit 1
-          fi
+        run: scripts/check-docs.sh

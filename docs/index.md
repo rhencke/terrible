@@ -16,9 +16,12 @@ Resource types:
 
 - `terrible_host` — target host (SSH, WinRM, local, Docker, etc.)
 - `terrible_ansible_builtin_*` — one resource per Ansible module, discovered dynamically
-- `terrible_playbook` — runs an Ansible playbook file
-- `terrible_role` — runs an Ansible role
 - `terrible_vault` (data source) — decrypts Ansible Vault ciphertext
+
+> **Note:** `terrible_playbook` and `terrible_role` are deprecated and will be
+> removed in a future release. For playbook and role execution, use the
+> [ansible/ansible](https://registry.terraform.io/providers/ansible/ansible/latest/docs)
+> provider instead.
 
 ## Example Usage
 
