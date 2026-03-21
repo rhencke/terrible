@@ -144,13 +144,74 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-  # ── Stage 3: publish (placeholder — binary validation coming in #44/#45) ──
-  # TODO(#44): replace this with per-platform binary validation jobs that
-  # download from the draft release and run integration tests against the
-  # actual shipped binary before publishing.
+  # ── Stage 3: binary validation (all platforms, against draft release) ────
+  # Downloads the actual shipped binary from the draft release and runs
+  # integration tests against it — catches packaging bugs missed by source tests.
+  validate_binary:
+    name: validate binary (${{ matrix.os }})
+    needs: draft
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # OpenTofu has no arm64 Linux binary in the setup action yet
+      - name: Install OpenTofu
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+
+      - name: Install test dependencies
+        run: uv sync
+
+      - name: Download binary from draft release
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ZIP="terraform-provider-terrible_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
+          gh release download "${GITHUB_REF_NAME}" --pattern "${ZIP}" --dir /tmp/release-bin
+          cd /tmp/release-bin && unzip "${ZIP}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Install binary as Terraform provider
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PLUGIN_DIR="${HOME}/.terraform.d/plugins/local/terrible/terrible/0.0.1/${{ matrix.goos }}_${{ matrix.goarch }}"
+          mkdir -p "${PLUGIN_DIR}"
+          cp "/tmp/release-bin/terraform-provider-terrible_v${VERSION}" \
+             "${PLUGIN_DIR}/terraform-provider-terrible_v0.0.1"
+          chmod +x "${PLUGIN_DIR}/terraform-provider-terrible_v0.0.1"
+
+      - name: Run integration tests against shipped binary
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
+        run: make integration-test
+
+  # ── Stage 4: publish (only if ALL binary validations pass) ────────────────
   publish:
     name: publish
-    needs: draft
+    needs: validate_binary
     runs-on: ubuntu-latest
     permissions:
       contents: write
