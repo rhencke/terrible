@@ -90,15 +90,29 @@ if [[ -z "${RUN_ID}" ]]; then
     exit 1
 fi
 
-echo "Watching run ${RUN_ID}..."
-if gh run watch "${RUN_ID}" --exit-status; then
+echo "Watching run ${RUN_ID}..." >&2
+
+# Print job status updates as they complete
+gh run watch "${RUN_ID}" --exit-status &
+WATCH_PID=$!
+
+while kill -0 $WATCH_PID 2>/dev/null; do
+    gh run view "${RUN_ID}" --json jobs \
+        --jq '.jobs[] | "\(.conclusion // "running") \(.name)"' 2>/dev/null \
+        | sort -u >&2
+    echo "---" >&2
+    sleep 15
+done
+
+wait $WATCH_PID
+STATUS=$?
+
+if [[ $STATUS -eq 0 ]]; then
     echo ""
     echo "Released ${TAG}: $(gh release view "${TAG}" --json url -q '.url')"
 else
     echo ""
     echo "ERROR: release workflow failed. Assets were NOT published." >&2
-    echo "Fix the issue, delete the tag and release, then re-release:" >&2
-    echo "  git tag -d ${TAG} && git push origin :${TAG}" >&2
-    echo "  gh release delete ${TAG} --yes" >&2
+    echo "Check failed jobs with: gh run view ${RUN_ID} --json jobs --jq '.jobs[] | {name, conclusion}'" >&2
     exit 1
 fi
