@@ -97,6 +97,8 @@ jobs:
     permissions:
       contents: write
       actions: read
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -133,6 +135,7 @@ jobs:
               "terraform-provider-terrible_${VERSION}_SHA256SUMS"
 
       - name: Create draft release and upload assets
+        id: create
         run: |
           NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
           TITLE="$(echo "${NOTES}" | awk 'NF{print; exit}')"
@@ -141,6 +144,11 @@ jobs:
             --notes "${NOTES:-${GITHUB_REF_NAME}}" \
             --draft \
             zips/*.zip zips/*_manifest.json zips/*_SHA256SUMS zips/*_SHA256SUMS.sig
+          # Output the release ID so validate_binary can download by ID (draft releases
+          # are not accessible by tag name via gh release download)
+          RELEASE_ID="$(gh api repos/${GITHUB_REPOSITORY}/releases --jq \
+            ".[] | select(.tag_name == \"${GITHUB_REF_NAME}\" and .draft == true) | .id" | head -1)"
+          echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -149,7 +157,7 @@ jobs:
   # integration tests against it — catches packaging bugs missed by source tests.
   validate_binary:
     name: validate binary (${{ matrix.os }})
-    needs: draft
+    needs: [draft]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -190,7 +198,13 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           ZIP="terraform-provider-terrible_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
-          gh release download "${GITHUB_REF_NAME}" --pattern "${ZIP}" --dir /tmp/release-bin
+          mkdir -p /tmp/release-bin
+          # Draft releases are not accessible by tag name; use the release ID from the draft job
+          ASSET_URL="$(gh api repos/${GITHUB_REPOSITORY}/releases/${{ needs.draft.outputs.release_id }}/assets \
+            --jq ".[] | select(.name == \"${ZIP}\") | .url")"
+          curl -fsSL -H "Authorization: token ${{ github.token }}" \
+            -H "Accept: application/octet-stream" \
+            "${ASSET_URL}" -o "/tmp/release-bin/${ZIP}"
           cd /tmp/release-bin && unzip "${ZIP}"
         env:
           GH_TOKEN: ${{ github.token }}
@@ -211,7 +225,7 @@ jobs:
   # ── Stage 4: publish (only if ALL binary validations pass) ────────────────
   publish:
     name: publish
-    needs: validate_binary
+    needs: [validate_binary, draft]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -227,7 +241,7 @@ jobs:
   # The tag remains; cut a new patch version to retry.
   cleanup_on_failure:
     name: cleanup on failure
-    needs: validate_binary
+    needs: [validate_binary, draft]
     if: failure()
     runs-on: ubuntu-latest
     permissions:
