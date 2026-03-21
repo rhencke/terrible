@@ -61,7 +61,9 @@ def _tf(label: str, args: list[str], *, ws: Path, env: dict, check: bool = True)
 
 
 @pytest.mark.parametrize("case_dir", _cases, ids=[d.name for d in _cases])
-def test_case(case_dir, tmp_path, provider_install):
+def test_case(case_dir, tmp_path, provider_install, host_vars):
+    # host_vars only apply to structured cases/ — examples have hardcoded hosts
+    extra_vars = host_vars if case_dir.is_relative_to(CASES_DIR) else []
     tf_bin = provider_install["tf_bin"]
     tf_env = {
         **os.environ,
@@ -99,7 +101,7 @@ def test_case(case_dir, tmp_path, provider_install):
         # --- Act ---
         _tf(
             "apply",
-            [tf_bin, "apply", "-auto-approve", "-no-color", "-var", f"state_file={state_file}"],
+            [tf_bin, "apply", "-auto-approve", "-no-color", "-var", f"state_file={state_file}", *extra_vars],
             ws=ws,
             env=tf_env,
         )
@@ -127,7 +129,7 @@ def test_case(case_dir, tmp_path, provider_install):
         # --- Assert: no drift on a second plan ---
         result = _tf(
             "plan (idempotency)",
-            [tf_bin, "plan", "-detailed-exitcode", "-no-color", "-var", f"state_file={state_file}"],
+            [tf_bin, "plan", "-detailed-exitcode", "-no-color", "-var", f"state_file={state_file}", *extra_vars],
             ws=ws,
             env=tf_env,
             check=False,
@@ -139,7 +141,7 @@ def test_case(case_dir, tmp_path, provider_install):
     finally:
         _tf(
             "destroy",
-            [tf_bin, "destroy", "-auto-approve", "-no-color", "-var", f"state_file={state_file}"],
+            [tf_bin, "destroy", "-auto-approve", "-no-color", "-var", f"state_file={state_file}", *extra_vars],
             ws=ws,
             env=tf_env,
             check=False,

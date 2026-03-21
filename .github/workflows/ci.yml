@@ -42,3 +42,31 @@ jobs:
 
       - name: Check docs are up to date
         run: scripts/check-docs.sh
+
+  integration-ssh:
+    name: integration-ssh (linux/amd64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Start SSH target
+        run: eval "$(scripts/start-ssh-target.sh)" && env | grep TERRIBLE_SSH >> "$GITHUB_ENV"
+
+      - name: Run integration tests over SSH
+        run: make integration-test

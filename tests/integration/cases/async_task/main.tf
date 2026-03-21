@@ -11,27 +11,30 @@ variable "state_file" {
   description = "Path for the terrible provider state file"
   default     = "/tmp/async_task_state.json"
 }
+variable "connection"  { default = "local" }
+variable "host"        { default = "127.0.0.1" }
+variable "ssh_port"    { default = 22 }
+variable "ssh_user"    { default = "" }
+variable "ssh_key"     { default = "" }
 
 provider "terrible" {
   state_file = var.state_file
 }
 
-resource "terrible_host" "local" {
-  host       = "127.0.0.1"
-  connection = "local"
+resource "terrible_host" "target" {
+  host             = var.host
+  connection       = var.connection
+  port             = var.ssh_port
+  user             = var.ssh_user != "" ? var.ssh_user : null
+  private_key_path = var.ssh_key != "" ? var.ssh_key : null
 }
 
 resource "terrible_command" "async_touch" {
-  host_id       = terrible_host.local.id
+  host_id       = terrible_host.target.id
   cmd           = "touch /tmp/terrible_async_marker.txt"
   async_seconds = 10
   poll_interval = 2
 }
 
-output "async_rc" {
-  value = terrible_command.async_touch.rc
-}
-
-output "async_changed" {
-  value = terrible_command.async_touch.changed
-}
+output "async_rc"      { value = terrible_command.async_touch.rc }
+output "async_changed" { value = terrible_command.async_touch.changed }

@@ -139,3 +139,26 @@ def provider_install(tmp_path_factory, provider_process):
         "tf_bin": tf_bin,
         "reattach_json": provider_process,
     }
+
+
+@pytest.fixture(scope="session")
+def host_vars() -> list[str]:
+    """
+    Return extra -var arguments for tofu apply based on connection mode.
+
+    Local mode (default): connection=local, host=127.0.0.1
+    SSH mode (TERRIBLE_SSH_HOST set): connection=ssh + SSH credentials from env.
+    """
+    ssh_host = os.environ.get("TERRIBLE_SSH_HOST")
+    if ssh_host:
+        return [
+            "-var", "connection=ssh",
+            "-var", f"host={ssh_host}",
+            "-var", f"ssh_port={os.environ.get('TERRIBLE_SSH_PORT', '22')}",
+            "-var", f"ssh_user={os.environ.get('TERRIBLE_SSH_USER', '')}",
+            "-var", f"ssh_key={os.environ.get('TERRIBLE_SSH_KEY', '')}",
+        ]
+    return [
+        "-var", "connection=local",
+        "-var", "host=127.0.0.1",
+    ]
