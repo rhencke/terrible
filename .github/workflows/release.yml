@@ -166,6 +166,8 @@ jobs:
     name: validate binary (${{ matrix.os }})
     needs: [draft]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: true
       matrix:
