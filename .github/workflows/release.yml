@@ -4,9 +4,16 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.6.2)'
+        required: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Normalize tag name for both push and workflow_dispatch triggers
+  TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
   # ── Stage 1: validate on all platforms ────────────────────────────────────
@@ -62,7 +69,7 @@ jobs:
         id: names
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG_NAME#v}"
           BINARY="terraform-provider-terrible_v${VERSION}"
           ZIP="terraform-provider-terrible_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
           echo "binary=${BINARY}" >> "$GITHUB_OUTPUT"
@@ -111,7 +118,7 @@ jobs:
 
       - name: Generate SHA256SUMS
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG_NAME#v}"
           cd zips
           cp "${GITHUB_WORKSPACE}/terraform-registry-manifest.json" \
              "terraform-provider-terrible_${VERSION}_manifest.json"
@@ -126,7 +133,7 @@ jobs:
 
       - name: Sign SHA256SUMS
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG_NAME#v}"
           cd zips
           gpg --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
               --pinentry-mode loopback \
@@ -137,17 +144,17 @@ jobs:
       - name: Create draft release and upload assets
         id: create
         run: |
-          NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+          NOTES="$(git tag -l --format='%(contents)' "${TAG_NAME}")"
           TITLE="$(echo "${NOTES}" | awk 'NF{print; exit}')"
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${TITLE:-${GITHUB_REF_NAME}}" \
-            --notes "${NOTES:-${GITHUB_REF_NAME}}" \
+          gh release create "${TAG_NAME}" \
+            --title "${TITLE:-${TAG_NAME}}" \
+            --notes "${NOTES:-${TAG_NAME}}" \
             --draft \
             zips/*.zip zips/*_manifest.json zips/*_SHA256SUMS zips/*_SHA256SUMS.sig
           # Output the release ID so validate_binary can download by ID (draft releases
           # are not accessible by tag name via gh release download)
           RELEASE_ID="$(gh api repos/${GITHUB_REPOSITORY}/releases --jq \
-            ".[] | select(.tag_name == \"${GITHUB_REF_NAME}\" and .draft == true) | .id" | head -1)"
+            ".[] | select(.tag_name == \"${TAG_NAME}\" and .draft == true) | .id" | head -1)"
           echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
@@ -196,7 +203,7 @@ jobs:
 
       - name: Download binary from draft release
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG_NAME#v}"
           ZIP="terraform-provider-terrible_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip"
           mkdir -p /tmp/release-bin
           # Draft releases are not accessible by tag name; use the release ID from the draft job
@@ -211,7 +218,7 @@ jobs:
 
       - name: Install binary as Terraform provider
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG_NAME#v}"
           PLUGIN_DIR="${HOME}/.terraform.d/plugins/local/terrible/terrible/0.0.1/${{ matrix.goos }}_${{ matrix.goarch }}"
           mkdir -p "${PLUGIN_DIR}"
           cp "/tmp/release-bin/terraform-provider-terrible_v${VERSION}" \
@@ -232,7 +239,7 @@ jobs:
 
     steps:
       - name: Publish draft release
-        run: gh release edit "${GITHUB_REF_NAME}" --draft=false
+        run: gh release edit "${TAG_NAME}" --draft=false
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -250,7 +257,7 @@ jobs:
     steps:
       - name: Delete draft release
         run: |
-          echo "Binary validation failed — deleting draft release ${GITHUB_REF_NAME}."
-          gh release delete "${GITHUB_REF_NAME}" --yes
+          echo "Binary validation failed — deleting draft release ${TAG_NAME}."
+          gh release delete "${TAG_NAME}" --yes
         env:
           GH_TOKEN: ${{ github.token }}
