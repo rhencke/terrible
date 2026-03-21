@@ -18,6 +18,7 @@ import os
 import re as _re
 import shutil
 import subprocess
+import threading
 from pathlib import Path
 
 import pytest
@@ -77,19 +78,29 @@ def provider_process():
     )
 
     reattach = None
-    for _ in range(30):
-        line = proc.stdout.readline()
-        if not line:
-            break
-        m = _REATTACH_RE.search(line)
-        if m:
-            reattach = m.group(1)
-            break
+    _lines: list[str] = []
+
+    def _scan():
+        nonlocal reattach
+        for line in proc.stdout:
+            _lines.append(line.rstrip())
+            m = _REATTACH_RE.search(line)
+            if m:
+                reattach = m.group(1)
+                return  # found it; leave remaining output to be consumed naturally
+
+    _t = threading.Thread(target=_scan, daemon=True)
+    _t.start()
+    _t.join(timeout=30)
 
     if not reattach:
         proc.kill()
         proc.wait()
-        raise RuntimeError("Provider did not emit TF_REATTACH_PROVIDERS within expected output")
+        preview = "\n".join(_lines[-20:]) if _lines else "<no output>"
+        raise RuntimeError(
+            f"Provider did not emit TF_REATTACH_PROVIDERS within 30 s\n"
+            f"Last {min(20, len(_lines))} lines of output:\n{preview}"
+        )
 
     print(f"\n[setup] Provider PID={proc.pid} started in dev/reattach mode", flush=True)
     yield reattach
