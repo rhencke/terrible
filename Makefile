@@ -1,3 +1,5 @@
+unexport VIRTUAL_ENV
+
 .PHONY: help test integration-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
 
 help:
