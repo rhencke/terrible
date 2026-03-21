@@ -229,7 +229,10 @@ jobs:
 
       - name: Run integration tests against shipped binary
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
-        run: make integration-test
+        run: |
+          VERSION="${TAG_NAME#v}"
+          export TERRIBLE_PROVIDER_BIN="/tmp/release-bin/terraform-provider-terrible_v${VERSION}"
+          make integration-test
 
   # ── Stage 4: publish (only if ALL binary validations pass) ────────────────
   publish:
@@ -246,6 +249,84 @@ jobs:
         run: gh release edit "${TAG_NAME}" --draft=false
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # ── Stage 5: registry validation (after publish) ─────────────────────────
+  # Polls the Terraform Registry until the new version is ingested, then
+  # downloads the binary via the registry API and runs the same integration
+  # tests — validates the full publish round-trip on every platform.
+  validate_registry:
+    name: validate registry (${{ matrix.os }})
+    needs: [publish]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false   # report all platform results even if one fails
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install OpenTofu
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
+
+      - name: Install test dependencies
+        run: uv sync
+
+      - name: Poll registry until version is available
+        run: |
+          VERSION="${TAG_NAME#v}"
+          echo "Polling registry for rhencke/terrible v${VERSION}..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -sf \
+              "https://registry.terraform.io/v1/providers/rhencke/terrible/${VERSION}/download/${{ matrix.goos }}/${{ matrix.goarch }}" \
+              -o /dev/null -w "%{http_code}" 2>/dev/null || echo "000")
+            if [ "${STATUS}" = "200" ]; then
+              echo "Version ${VERSION} is available on the registry."
+              exit 0
+            fi
+            echo "Attempt ${i}/30: not yet available (HTTP ${STATUS}), waiting 30s..."
+            sleep 30
+          done
+          echo "Timed out waiting for registry to ingest v${VERSION} (15 minutes)."
+          exit 1
+
+      - name: Download binary from registry
+        run: |
+          VERSION="${TAG_NAME#v}"
+          DOWNLOAD_JSON=$(curl -sf \
+            "https://registry.terraform.io/v1/providers/rhencke/terrible/${VERSION}/download/${{ matrix.goos }}/${{ matrix.goarch }}")
+          DOWNLOAD_URL=$(echo "${DOWNLOAD_JSON}" | jq -r '.download_url')
+          FILENAME=$(echo "${DOWNLOAD_JSON}" | jq -r '.filename')
+          mkdir -p /tmp/registry-bin
+          curl -fsSL "${DOWNLOAD_URL}" -o "/tmp/registry-bin/${FILENAME}"
+          cd /tmp/registry-bin && unzip "${FILENAME}"
+          echo "REGISTRY_BIN=/tmp/registry-bin/terraform-provider-terrible_v${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Run integration tests against registry binary
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
+        run: |
+          export TERRIBLE_PROVIDER_BIN="${REGISTRY_BIN}"
+          make integration-test
 
   # ── Cleanup: delete draft if binary validation failed ─────────────────────
   # Draft releases are invisible to the registry, so it is safe to delete them.

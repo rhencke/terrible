@@ -30,6 +30,11 @@ PROVIDER_VERSION = "0.0.1"
 
 
 def _find_provider_entrypoint() -> Path:
+    # Allow explicit override — used by validate_binary and validate_registry CI
+    # stages to test the packaged binary rather than the source-tree binary.
+    override = os.environ.get("TERRIBLE_PROVIDER_BIN")
+    if override:
+        return Path(override)
     # Prefer the venv-local binary; fall back to wherever it's on PATH.
     venv_bin = REPO_ROOT / ".venv" / "bin" / "terraform-provider-terrible"
     if venv_bin.exists():
