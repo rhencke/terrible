@@ -27,7 +27,7 @@ description: |-
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `manager` (String) The package manager(s) used by the system so we can query the package information. This is a list and can support multiple package managers per system, since version 2.8. The V(portage) and V(pkg) options were added in version 2.8. The V(apk) option was added in version 2.11. The V(pkg_info) option was added in version 2.13. Aliases were added in 2.18, to support using C(manager={{ansible_facts['pkg_mgr']}})
+- `manager` (String) The package manager(s) used by the system so we can query the package information. This is a list and can support multiple package managers per system, since version 2.8. The `portage` and `pkg` options were added in version 2.8. The `apk` option was added in version 2.11. The `pkg_info` option was added in version 2.13. Aliases were added in 2.18, to support using `manager={{ansible_facts['pkg_mgr']}}`
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `strategy` (String) This option controls how the module queries the package managers on the system.

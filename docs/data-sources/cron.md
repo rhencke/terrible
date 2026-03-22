@@ -18,22 +18,22 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this data source against
-- `name` (String) Description of a crontab entry or, if O(env) is set, the name of environment variable. This parameter is always required as of ansible-core 2.12.
+- `name` (String) Description of a crontab entry or, if `env` is set, the name of environment variable. This parameter is always required as of ansible-core 2.12.
 
 ### Optional
 
-- `backup` (Boolean) If set, create a backup of the crontab before it is modified. The location of the backup is returned in the RV(ignore:backup_file) variable by this module.
-- `cron_file` (String) If specified, uses this file instead of an individual user's crontab. The assumption is that this file is exclusively managed by the module, do not use if the file contains multiple entries, NEVER use for /etc/crontab. If this is a relative path, it is interpreted with respect to C(/etc/cron.d). Many Linux distros expect (and some require) the filename portion to consist solely of upper- and lower-case letters, digits, underscores, and hyphens. Using this parameter requires you to specify the O(user) as well, unless O(state=absent). Either this parameter or O(name) is required.
-- `day` (String) Day of the month the job should run (V(1-31), V(*), V(*/2), and so on). Cannot be combined with O(special_time).
-- `disabled` (Boolean) If the job should be disabled (commented out) in the crontab. Only has effect if O(state=present).
-- `env` (Boolean) If set, manages a crontab's environment variable. New variables are added on top of crontab. O(name) and O(value) parameters are the name and the value of environment variable.
-- `hour` (String) Hour when the job should run (V(0-23), V(*), V(*/2), and so on). Cannot be combined with O(special_time).
-- `insertafter` (String) Used with O(state=present) and O(env). If specified, the environment variable will be inserted after the declaration of specified environment variable.
-- `insertbefore` (String) Used with O(state=present) and O(env). If specified, the environment variable will be inserted before the declaration of specified environment variable.
-- `job` (String) The command to execute or, if O(env) is set, the value of environment variable. The command should not contain line breaks. Required if O(state=present).
-- `minute` (String) Minute when the job should run (V(0-59), V(*), V(*/2), and so on). Cannot be combined with O(special_time).
-- `month` (String) Month of the year the job should run (V(JAN-DEC) or V(1-12), V(*), V(*/2), and so on). Cannot be combined with O(special_time).
-- `special_time` (String) Special time specification nickname. Cannot be combined with O(minute), O(hour), O(day), O(month) or O(weekday).
+- `backup` (Boolean) If set, create a backup of the crontab before it is modified. The location of the backup is returned in the R`ignore:backup_file` variable by this module.
+- `cron_file` (String) If specified, uses this file instead of an individual user's crontab. The assumption is that this file is exclusively managed by the module, do not use if the file contains multiple entries, NEVER use for /etc/crontab. If this is a relative path, it is interpreted with respect to `/etc/cron.d`. Many Linux distros expect (and some require) the filename portion to consist solely of upper- and lower-case letters, digits, underscores, and hyphens. Using this parameter requires you to specify the `user` as well, unless `state=absent`. Either this parameter or `name` is required.
+- `day` (String) Day of the month the job should run (`1-31`, `*`, `*/2`, and so on). Cannot be combined with `special_time`.
+- `disabled` (Boolean) If the job should be disabled (commented out) in the crontab. Only has effect if `state=present`.
+- `env` (Boolean) If set, manages a crontab's environment variable. New variables are added on top of crontab. `name` and `value` parameters are the name and the value of environment variable.
+- `hour` (String) Hour when the job should run (`0-23`, `*`, `*/2`, and so on). Cannot be combined with `special_time`.
+- `insertafter` (String) Used with `state=present` and `env`. If specified, the environment variable will be inserted after the declaration of specified environment variable.
+- `insertbefore` (String) Used with `state=present` and `env`. If specified, the environment variable will be inserted before the declaration of specified environment variable.
+- `job` (String) The command to execute or, if `env` is set, the value of environment variable. The command should not contain line breaks. Required if `state=present`.
+- `minute` (String) Minute when the job should run (`0-59`, `*`, `*/2`, and so on). Cannot be combined with `special_time`.
+- `month` (String) Month of the year the job should run (`JAN-DEC` or `1-12`, `*`, `*/2`, and so on). Cannot be combined with `special_time`.
+- `special_time` (String) Special time specification nickname. Cannot be combined with `minute`, `hour`, `day`, `month` or `weekday`.
 - `state` (String) Whether to ensure the job or environment variable is present or absent.
 - `user` (String) The specific user whose crontab should be modified. When unset, this parameter defaults to the current user.
-- `weekday` (String) Day of the week that the job should run (V(SUN-SAT) or V(0-6), V(*), and so on). Cannot be combined with O(special_time).
+- `weekday` (String) Day of the week that the job should run (`SUN-SAT` or `0-6`, `*`, and so on). Cannot be combined with `special_time`.

@@ -18,28 +18,28 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `path` (String) The file to modify. Before Ansible 2.3 this option was only usable as O(dest), O(destfile) and O(name).
+- `path` (String) The file to modify. Before Ansible 2.3 this option was only usable as `dest`, `destfile` and `name`.
 
 ### Optional
 
-- `append_newline` (Boolean) Append a blank line to the inserted block, if this does not appear at the end of the file. Note that this attribute is not considered when C(state) is set to C(absent)
+- `append_newline` (Boolean) Append a blank line to the inserted block, if this does not appear at the end of the file. Note that this attribute is not considered when `state` is set to `absent`
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `backup` (Boolean) Create a backup file including the timestamp information so you can get the original file back if you somehow clobbered it incorrectly.
-- `block` (String) The text to insert inside the marker lines. If it is missing or an empty string, the block will be removed as if O(state) were specified to V(absent).
+- `block` (String) The text to insert inside the marker lines. If it is missing or an empty string, the block will be removed as if `state` were specified to `absent`.
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `create` (Boolean) Create a new file if it does not exist.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `encoding` (String) The character set in which the target file is encoded. For a list of available built-in encodings, see U(https://docs.python.org/3/library/codecs.html#standard-encodings)
+- `encoding` (String) The character set in which the target file is encoded. For a list of available built-in encodings, see https://docs.python.org/3/library/codecs.html#standard-encodings
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `insertafter` (String) If specified and no begin/ending O(marker) lines are found, the block will be inserted after the last match of specified regular expression. A special value is available; V(EOF) for inserting the block at the end of the file. If specified regular expression has no matches or no value is passed, V(EOF) will be used instead. The presence of the multiline flag (?m) in the regular expression controls whether the match is done line by line or with multiple lines. This behaviour was added in ansible-core 2.14.
-- `insertbefore` (String) If specified and no begin/ending O(marker) lines are found, the block will be inserted before the last match of specified regular expression. A special value is available; V(BOF) for inserting the block at the beginning of the file. If specified regular expression has no matches, the block will be inserted at the end of the file. The presence of the multiline flag (?m) in the regular expression controls whether the match is done line by line or with multiple lines. This behaviour was added in ansible-core 2.14.
-- `marker` (String) The marker line template. C({mark}) will be replaced with the values in O(marker_begin) (default=C(BEGIN)) and O(marker_end) (default=C(END)). Using a custom marker without the C({mark}) variable may result in the block being repeatedly inserted on subsequent playbook runs. Multi-line markers are not supported and will result in the block being repeatedly inserted on subsequent playbook runs. A newline is automatically appended by the module to O(marker_begin) and O(marker_end).
-- `marker_begin` (String) This will be inserted at C({mark}) in the opening ansible block O(marker).
-- `marker_end` (String) This will be inserted at C({mark}) in the closing ansible block O(marker).
+- `insertafter` (String) If specified and no begin/ending `marker` lines are found, the block will be inserted after the last match of specified regular expression. A special value is available; `EOF` for inserting the block at the end of the file. If specified regular expression has no matches or no value is passed, `EOF` will be used instead. The presence of the multiline flag (?m) in the regular expression controls whether the match is done line by line or with multiple lines. This behaviour was added in ansible-core 2.14.
+- `insertbefore` (String) If specified and no begin/ending `marker` lines are found, the block will be inserted before the last match of specified regular expression. A special value is available; `BOF` for inserting the block at the beginning of the file. If specified regular expression has no matches, the block will be inserted at the end of the file. The presence of the multiline flag (?m) in the regular expression controls whether the match is done line by line or with multiple lines. This behaviour was added in ansible-core 2.14.
+- `marker` (String) The marker line template. `{mark}` will be replaced with the values in `marker_begin` (default=`BEGIN`) and `marker_end` (default=`END`). Using a custom marker without the `{mark}` variable may result in the block being repeatedly inserted on subsequent playbook runs. Multi-line markers are not supported and will result in the block being repeatedly inserted on subsequent playbook runs. A newline is automatically appended by the module to `marker_begin` and `marker_end`.
+- `marker_begin` (String) This will be inserted at `{mark}` in the opening ansible block `marker`.
+- `marker_end` (String) This will be inserted at `{mark}` in the closing ansible block `marker`.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `prepend_newline` (Boolean) Prepend a blank line to the inserted block, if this does not appear at the beginning of the file. Note that this attribute is not considered when C(state) is set to C(absent)
+- `prepend_newline` (Boolean) Prepend a blank line to the inserted block, if this does not appear at the beginning of the file. Note that this attribute is not considered when `state` is set to `absent`
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether the block should be there or not.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).

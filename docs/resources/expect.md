@@ -19,21 +19,21 @@ description: |-
 
 - `command` (String) The command module takes command to run.
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `responses` (String) Mapping of prompt regular expressions and corresponding answer(s). Each key in O(responses) is a Python regex U(https://docs.python.org/3/library/re.html#regular-expression-syntax). The value of each key is a string or list of strings. If the value is a string and the prompt is encountered multiple times, the answer will be repeated. Provide the value as a list to give different answers for successive matches.
+- `responses` (String) Mapping of prompt regular expressions and corresponding answer(s). Each key in `responses` is a Python regex https://docs.python.org/3/library/re.html#regular-expression-syntax. The value of each key is a string or list of strings. If the value is a string and the prompt is encountered multiple times, the answer will be repeated. Provide the value as a list to give different answers for successive matches.
 
 ### Optional
 
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `chdir` (String) Change into this directory before running the command.
-- `creates` (String) A filename, when it already exists, this step will B(not) be run.
+- `creates` (String) A filename, when it already exists, this step will **not** be run.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `echo` (Boolean) Whether or not to echo out your response strings.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `removes` (String) A filename, when it does not exist, this step will B(not) be run.
+- `removes` (String) A filename, when it does not exist, this step will **not** be run.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.

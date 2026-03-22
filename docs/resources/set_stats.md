@@ -22,7 +22,7 @@ description: |-
 
 ### Optional
 
-- `aggregate` (Boolean) Whether the provided value is aggregated to the existing stat V(true) or will replace it V(false).
+- `aggregate` (Boolean) Whether the provided value is aggregated to the existing stat `true` or will replace it `false`.
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.

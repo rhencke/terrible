@@ -28,18 +28,18 @@ description: |-
 - `delay` (Number) Number of seconds to wait before starting to poll.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `exclude_hosts` (String) List of hosts or IPs to ignore when looking for active TCP connections for V(drained) state.
+- `exclude_hosts` (String) List of hosts or IPs to ignore when looking for active TCP connections for `drained` state.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `host` (String) A resolvable hostname or IP address to wait for.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `msg` (String) This overrides the normal error message from a failure to meet the required conditions.
-- `path` (String) Path to a file on the filesystem that must exist before continuing. O(path) and O(port) are mutually exclusive parameters.
+- `path` (String) Path to a file on the filesystem that must exist before continuing. `path` and `port` are mutually exclusive parameters.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `port` (Number) Port number to poll. O(path) and O(port) are mutually exclusive parameters.
+- `port` (Number) Port number to poll. `path` and `port` are mutually exclusive parameters.
 - `search_regex` (String) Can be used to match a string in either a file or a socket connection. Defaults to a multiline regex. When inspecting a system log file and a static string, remember that Ansible by default logs its own actions there; see the notes and examples for information.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `sleep` (Number) Number of seconds to sleep between checks. Before Ansible 2.3 this was hardcoded to 1 second.
-- `state` (String) Either V(present), V(started), or V(stopped), V(absent), or V(drained). When checking a port V(started) will ensure the port is open, V(stopped) will check that it is closed, V(drained) will check for active connections. When checking for a file or a search string V(present) or V(started) will ensure that the file or string is present before continuing, V(absent) will check that file is absent or removed.
+- `state` (String) Either `present`, `started`, or `stopped`, `absent`, or `drained`. When checking a port `started` will ensure the port is open, `stopped` will check that it is closed, `drained` will check for active connections. When checking for a file or a search string `present` or `started` will ensure that the file or string is present before continuing, `absent` will check that file is absent or removed.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
@@ -49,5 +49,5 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `elapsed` (Number) The number of seconds that elapsed while waiting
 - `id` (String) Unique task resource ID
-- `match_groupdict` (String) Dictionary containing all the named subgroups of the match, keyed by the subgroup name, as returned by U(https://docs.python.org/3/library/re.html#re.Match.groupdict)
-- `match_groups` (String) Tuple containing all the subgroups of the match as returned by U(https://docs.python.org/3/library/re.html#re.Match.groups)
+- `match_groupdict` (String) Dictionary containing all the named subgroups of the match, keyed by the subgroup name, as returned by https://docs.python.org/3/library/re.html#re.Match.groupdict
+- `match_groups` (String) Tuple containing all the subgroups of the match as returned by https://docs.python.org/3/library/re.html#re.Match.groups

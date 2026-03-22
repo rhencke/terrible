@@ -18,6 +18,7 @@ from terrible_provider.discovery import (
     _load_cached,
     _open_cache,
     _parse_yaml_block,
+    _render_rst,
     _resource_name_for,
     _save_cache,
     discover_task_resources,
@@ -756,3 +757,49 @@ class TestGetInstalledCollections:
         monkeypatch.setitem(sys.modules, "ansible.constants", None)
         result = _get_installed_collections()
         assert result == set()
+
+
+# ---------------------------------------------------------------------------
+# _render_rst
+# ---------------------------------------------------------------------------
+
+
+class TestRenderRst:
+    def test_option(self):
+        assert _render_rst("See O(name)") == "See `name`"
+
+    def test_value(self):
+        assert _render_rst("Use V(present)") == "Use `present`"
+
+    def test_code(self):
+        assert _render_rst("Run C(apt-get update)") == "Run `apt-get update`"
+
+    def test_env_var(self):
+        assert _render_rst("Set E(PATH)") == "Set `PATH`"
+
+    def test_module(self):
+        assert _render_rst("See M(ansible.builtin.copy)") == "See `ansible.builtin.copy`"
+
+    def test_plugin(self):
+        assert _render_rst("Use P(amazon.aws.aws_ec2#inventory)") == "Use `amazon.aws.aws_ec2#inventory`"
+
+    def test_bold(self):
+        assert _render_rst("B(important) note") == "**important** note"
+
+    def test_italic(self):
+        assert _render_rst("I(emphasis) here") == "*emphasis* here"
+
+    def test_url(self):
+        assert _render_rst("See U(https://example.com)") == "See https://example.com"
+
+    def test_link(self):
+        assert _render_rst("See L(the docs,https://example.com)") == "See [the docs](https://example.com)"
+
+    def test_ref(self):
+        assert _render_rst("See R(specification format,role_argument_spec)") == "See specification format"
+
+    def test_no_markup(self):
+        assert _render_rst("plain text") == "plain text"
+
+    def test_multiple(self):
+        assert _render_rst("O(src) and V(true)") == "`src` and `true`"

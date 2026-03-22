@@ -22,7 +22,7 @@ description: |-
 
 ### Optional
 
-- `mode` (String) If V(status), obtain the status. If V(cleanup), clean up the async job cache (by default in C(~/.ansible_async/)) for the specified job O(jid), without waiting for it to finish.
+- `mode` (String) If `status`, obtain the status. If `cleanup`, clean up the async job cache (by default in `~/.ansible_async/`) for the specified job `jid`, without waiting for it to finish.
 
 ### Read-Only
 

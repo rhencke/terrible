@@ -35,7 +35,7 @@ description: |-
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `validate_certs` (Boolean) If V(false) and the O(key) is a url starting with V(https), SSL certificates will not be validated. This should only be used on personally controlled sites using self-signed certificates.
+- `validate_certs` (Boolean) If `false` and the `key` is a url starting with `https`, SSL certificates will not be validated. This should only be used on personally controlled sites using self-signed certificates.
 
 ### Read-Only
 

@@ -28,20 +28,20 @@ description: |-
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `filename` (String) Sets the name of the source list file in C(sources.list.d). Defaults to a file name based on the repository source url. The C(.list) extension will be automatically added.
+- `filename` (String) Sets the name of the source list file in `sources.list.d`. Defaults to a file name based on the repository source url. The `.list` extension will be automatically added.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `install_python_apt` (Boolean) Whether to automatically try to install the Python apt library or not, if it is not already installed. Without this library, the module does not work. Runs C(apt-get install python3-apt). Only works with the system Python. If you are using a Python on the remote that is not the system Python, set O(install_python_apt=false) and ensure that the Python apt library for your Python version is installed some other way.
-- `mode` (String) The octal mode for newly created files in C(sources.list.d). Default is what system uses (probably 0644).
+- `install_python_apt` (Boolean) Whether to automatically try to install the Python apt library or not, if it is not already installed. Without this library, the module does not work. Runs `apt-get install python3-apt`. Only works with the system Python. If you are using a Python on the remote that is not the system Python, set `install_python_apt=false` and ensure that the Python apt library for your Python version is installed some other way.
+- `mode` (String) The octal mode for newly created files in `sources.list.d`. Default is what system uses (probably 0644).
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) A source string state.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `update_cache` (Boolean) Run the equivalent of C(apt-get update) when a change occurs. Cache updates are run after making changes.
-- `update_cache_retries` (Number) Amount of retries if the cache update fails. Also see O(update_cache_retry_max_delay).
-- `update_cache_retry_max_delay` (Number) Use an exponential backoff delay for each retry (see O(update_cache_retries)) up to this max delay in seconds.
-- `validate_certs` (Boolean) If V(false), SSL certificates for the target repo will not be validated. This should only be used on personally controlled sites using self-signed certificates.
+- `update_cache` (Boolean) Run the equivalent of `apt-get update` when a change occurs. Cache updates are run after making changes.
+- `update_cache_retries` (Number) Amount of retries if the cache update fails. Also see `update_cache_retry_max_delay`.
+- `update_cache_retry_max_delay` (Number) Use an exponential backoff delay for each retry (see `update_cache_retries`) up to this max delay in seconds.
+- `validate_certs` (Boolean) If `false`, SSL certificates for the target repo will not be validated. This should only be used on personally controlled sites using self-signed certificates.
 
 ### Read-Only
 

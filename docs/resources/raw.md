@@ -26,7 +26,7 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `executable` (String) Change the shell used to execute the command. Should be an absolute path to the executable. When using privilege escalation (C(become)) a default shell will be assigned if one is not provided as privilege escalation requires a shell.
+- `executable` (String) Change the shell used to execute the command. Should be an absolute path to the executable. When using privilege escalation (`become`) a default shell will be assigned if one is not provided as privilege escalation requires a shell.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.

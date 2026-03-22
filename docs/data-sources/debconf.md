@@ -23,6 +23,6 @@ description: |-
 ### Optional
 
 - `question` (String) A debconf configuration setting.
-- `unseen` (Boolean) Do not set C(seen) flag when pre-seeding.
-- `value` (String) Value to set the configuration to. After Ansible 2.17, C(value) is of type C(raw).
-- `vtype` (String) The type of the value supplied. It is highly recommended to add C(no_log=True) to task while specifying O(vtype=password). V(seen) was added in Ansible 2.2. After Ansible 2.17, user can specify C(value) as a list, if C(vtype) is set as V(multiselect).
+- `unseen` (Boolean) Do not set `seen` flag when pre-seeding.
+- `value` (String) Value to set the configuration to. After Ansible 2.17, `value` is of type `raw`.
+- `vtype` (String) The type of the value supplied. It is highly recommended to add `no_log=True` to task while specifying `vtype=password`. `seen` was added in Ansible 2.2. After Ansible 2.17, user can specify `value` as a list, if `vtype` is set as `multiselect`.

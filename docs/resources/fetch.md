@@ -17,9 +17,9 @@ description: |-
 
 ### Required
 
-- `dest` (String) A directory to save the file into. For example, if O(dest=/backup), then O(src=/etc/profile) on host C(host.example.com), would save the file into C(/backup/host.example.com/etc/profile). The host name is based on the inventory name.
+- `dest` (String) A directory to save the file into. For example, if `dest=/backup`, then `src=/etc/profile` on host `host.example.com`, would save the file into `/backup/host.example.com/etc/profile`. The host name is based on the inventory name.
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `src` (String) The file on the remote system to fetch. This I(must) be a file, not a directory. Recursive fetching may be supported in a later release.
+- `src` (String) The file on the remote system to fetch. This *must* be a file, not a directory. Recursive fetching may be supported in a later release.
 
 ### Optional
 
@@ -27,9 +27,9 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `fail_on_missing` (Boolean) When set to V(true), the task will fail if the remote file cannot be read for any reason. Prior to Ansible 2.5, setting this would only fail if the source file was missing. The default was changed to V(true) in Ansible 2.5.
+- `fail_on_missing` (Boolean) When set to `true`, the task will fail if the remote file cannot be read for any reason. Prior to Ansible 2.5, setting this would only fail if the source file was missing. The default was changed to `true` in Ansible 2.5.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If O(dest) ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
+- `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If `dest` ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).

@@ -24,19 +24,19 @@ description: |-
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `depth` (Number) When using O(dir), this module will, by default, recursively go through each sub directory and load up the variables. By explicitly setting the depth, this module will only go as deep as the depth.
-- `dir` (String) The directory name from which the variables should be loaded. If the path is relative and the task is inside a role, it will look inside the role's C(vars/) subdirectory. If the path is relative and not inside a role, it will be parsed relative to the playbook.
+- `depth` (Number) When using `dir`, this module will, by default, recursively go through each sub directory and load up the variables. By explicitly setting the depth, this module will only go as deep as the depth.
+- `dir` (String) The directory name from which the variables should be loaded. If the path is relative and the task is inside a role, it will look inside the role's `vars/` subdirectory. If the path is relative and not inside a role, it will be parsed relative to the playbook.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `extensions` (String) List of file extensions to read when using O(dir).
+- `extensions` (String) List of file extensions to read when using `dir`.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `file` (String) The file name from which variables should be loaded. If the path is relative, it will look for the file in C(vars/) subdirectory of a role or relative to playbook.
+- `file` (String) The file name from which variables should be loaded. If the path is relative, it will look for the file in `vars/` subdirectory of a role or relative to playbook.
 - `files_matching` (String) Limit the files that are loaded within any directory to this regular expression.
-- `free-form` (String) This module allows you to specify the O(file) option directly without any other options. There is no O(ignore:free-form) option, this is just an indicator, see example below.
-- `hash_behaviour` (String) If set to V(merge), merges existing hash variables instead of overwriting them. If omitted (V(null)), the behavior falls back to the global C(hash_behaviour) configuration. This option is self-contained and does not apply to individual files in O(dir). You can use a loop to apply O(hash_behaviour) per file.
+- `free-form` (String) This module allows you to specify the `file` option directly without any other options. There is no `ignore:free-form` option, this is just an indicator, see example below.
+- `hash_behaviour` (String) If set to `merge`, merges existing hash variables instead of overwriting them. If omitted (`null`), the behavior falls back to the global `hash_behaviour` configuration. This option is self-contained and does not apply to individual files in `dir`. You can use a loop to apply `hash_behaviour` per file.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `ignore_files` (String) List of file names to ignore.
 - `ignore_unknown_extensions` (Boolean) Ignore unknown file extensions within the directory. This allows users to specify a directory containing vars files that are intermingled with non-vars files extension types (for example, a directory with a README in it and vars files).
-- `name` (String) The name of a variable into which assign the included vars. If omitted (V(null)) they will be made top level vars.
+- `name` (String) The name of a variable into which assign the included vars. If omitted (`null`) they will be made top level vars.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).

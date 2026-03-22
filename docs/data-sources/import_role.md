@@ -23,9 +23,9 @@ description: |-
 ### Optional
 
 - `allow_duplicates` (Boolean) Overrides the role's metadata setting to allow using a role more than once with the same parameters.
-- `defaults_from` (String) File to load from a role's C(defaults/) directory.
-- `handlers_from` (String) File to load from a role's C(handlers/) directory.
-- `public` (Boolean) This option dictates whether the role's C(vars) and C(defaults) are exposed to the play. Variables are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well unlike C(include_role). The default depends on the configuration option R(DEFAULT_PRIVATE_ROLE_VARS, DEFAULT_PRIVATE_ROLE_VARS).
+- `defaults_from` (String) File to load from a role's `defaults/` directory.
+- `handlers_from` (String) File to load from a role's `handlers/` directory.
+- `public` (Boolean) This option dictates whether the role's `vars` and `defaults` are exposed to the play. Variables are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well unlike `include_role`. The default depends on the configuration option DEFAULT_PRIVATE_ROLE_VARS.
 - `rolespec_validate` (Boolean) Perform role argument spec validation if an argument spec is defined.
-- `tasks_from` (String) File to load from a role's C(tasks/) directory.
-- `vars_from` (String) File to load from a role's C(vars/) directory.
+- `tasks_from` (String) File to load from a role's `tasks/` directory.
+- `vars_from` (String) File to load from a role's `vars/` directory.

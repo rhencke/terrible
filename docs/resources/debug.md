@@ -33,7 +33,7 @@ description: |-
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `var` (String) A variable name to debug. Mutually exclusive with the O(msg) option. Be aware that this option already runs in Jinja2 context and has an implicit C({{ }}) wrapping, so you should not be using Jinja2 delimiters unless you are looking for double interpolation.
+- `var` (String) A variable name to debug. Mutually exclusive with the `msg` option. Be aware that this option already runs in Jinja2 context and has an implicit `{{ }}` wrapping, so you should not be using Jinja2 delimiters unless you are looking for double interpolation.
 - `verbosity` (Number) A number that controls when the debug is run, if you set to 3 it will only run debug when -vvv or above.
 
 ### Read-Only

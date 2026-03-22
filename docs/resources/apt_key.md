@@ -29,7 +29,7 @@ description: |-
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `file` (String) The path to a keyfile on the remote server to add to the keyring.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `keyring` (String) The full path to specific keyring file in C(/etc/apt/trusted.gpg.d/).
+- `keyring` (String) The full path to specific keyring file in `/etc/apt/trusted.gpg.d/`.
 - `keyserver` (String) The keyserver to retrieve key from.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
@@ -38,7 +38,7 @@ description: |-
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
 - `url` (String) The URL to retrieve key from.
-- `validate_certs` (Boolean) If V(false), SSL certificates for the target url will not be validated. This should only be used on personally controlled sites using self-signed certificates.
+- `validate_certs` (Boolean) If `false`, SSL certificates for the target url will not be validated. This should only be used on personally controlled sites using self-signed certificates.
 
 ### Read-Only
 

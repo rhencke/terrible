@@ -22,10 +22,10 @@ description: |-
 
 ### Optional
 
-- `fail_key` (Boolean) If a supplied key is missing this will make the task fail if V(true).
+- `fail_key` (Boolean) If a supplied key is missing this will make the task fail if `true`.
 - `key` (String) Key from which to return values from the specified database, otherwise the full contents are returned.
 - `service` (String) Override all databases with the specified service The underlying system must support the service flag which is not always available.
-- `split` (String) Character used to split the database values into lists/arrays such as V(:) or V(\\t), otherwise it will try to pick one depending on the database.
+- `split` (String) Character used to split the database values into lists/arrays such as `:` or `\\t`, otherwise it will try to pick one depending on the database.
 
 ### Read-Only
 

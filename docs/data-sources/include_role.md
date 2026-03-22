@@ -23,10 +23,10 @@ description: |-
 ### Optional
 
 - `allow_duplicates` (Boolean) Overrides the role's metadata setting to allow using a role more than once with the same parameters.
-- `apply` (String) Accepts a hash of task keywords (for example C(tags), C(become)) that will be applied to all tasks within the included role.
-- `defaults_from` (String) File to load from a role's C(defaults/) directory.
-- `handlers_from` (String) File to load from a role's C(handlers/) directory.
-- `public` (Boolean) This option dictates whether the role's C(vars) and C(defaults) are exposed to the play. If set to V(true) the variables will be available to tasks following the C(include_role) task. This functionality differs from standard variable exposure for roles listed under the C(roles) header or M(ansible.builtin.import_role) as they are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well.
+- `apply` (String) Accepts a hash of task keywords (for example `tags`, `become`) that will be applied to all tasks within the included role.
+- `defaults_from` (String) File to load from a role's `defaults/` directory.
+- `handlers_from` (String) File to load from a role's `handlers/` directory.
+- `public` (Boolean) This option dictates whether the role's `vars` and `defaults` are exposed to the play. If set to `true` the variables will be available to tasks following the `include_role` task. This functionality differs from standard variable exposure for roles listed under the `roles` header or `ansible.builtin.import_role` as they are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well.
 - `rolespec_validate` (Boolean) Perform role argument spec validation if an argument spec is defined.
-- `tasks_from` (String) File to load from a role's C(tasks/) directory.
-- `vars_from` (String) File to load from a role's C(vars/) directory.
+- `tasks_from` (String) File to load from a role's `tasks/` directory.
+- `vars_from` (String) File to load from a role's `vars/` directory.

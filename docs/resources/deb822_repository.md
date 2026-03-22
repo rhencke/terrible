@@ -18,7 +18,7 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `name` (String) Name of the repo. Specifically used for C(X-Repolib-Name) and in naming the repository and signing key files.
+- `name` (String) Name of the repo. Specifically used for `X-Repolib-Name` and in naming the repository and signing key files.
 
 ### Optional
 
@@ -31,29 +31,29 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `check_date` (Boolean) Controls if APT should consider the machine's time correct and hence perform time related checks, such as verifying that a Release file is not from the future.
 - `check_valid_until` (Boolean) Controls if APT should try to detect replay attacks.
-- `components` (String) Components specify different sections of one distribution version present in a C(Suite).
+- `components` (String) Components specify different sections of one distribution version present in a `Suite`.
 - `date_max_future` (Number) Controls how far from the future a repository may be.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `enabled` (Boolean) Tells APT whether the source is enabled or not.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `inrelease_path` (String) Determines the path to the C(InRelease) file, relative to the normal position of an C(InRelease) file.
-- `install_python_debian` (Boolean) Whether to automatically try to install the Python C(debian) library or not, if it is not already installed. Without this library, the module does not work. - Runs C(apt install python3-debian). - Only works with the system Python. If you are using a Python on the remote that is not the system Python, set O(install_python_debian=false) and ensure that the Python C(debian) library for your Python version is installed some other way.
+- `inrelease_path` (String) Determines the path to the `InRelease` file, relative to the normal position of an `InRelease` file.
+- `install_python_debian` (Boolean) Whether to automatically try to install the Python `debian` library or not, if it is not already installed. Without this library, the module does not work. - Runs `apt install python3-debian`. - Only works with the system Python. If you are using a Python on the remote that is not the system Python, set `install_python_debian=false` and ensure that the Python `debian` library for your Python version is installed some other way.
 - `languages` (String) Defines which languages information such as translated package descriptions should be downloaded.
-- `mode` (String) The octal mode for newly created files in C(sources.list.d).
-- `pdiffs` (Boolean) Controls if APT should try to use C(PDiffs) to update old indexes instead of downloading the new indexes entirely.
+- `mode` (String) The octal mode for newly created files in `sources.list.d`.
+- `pdiffs` (Boolean) Controls if APT should try to use `PDiffs` to update old indexes instead of downloading the new indexes entirely.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `signed_by` (String) Either a URL to a GPG key, absolute path to a keyring file, one or more fingerprints of keys either in the C(trusted.gpg) keyring or in the keyrings in the C(trusted.gpg.d/) directory, or an ASCII armored GPG public key block.
+- `signed_by` (String) Either a URL to a GPG key, absolute path to a keyring file, one or more fingerprints of keys either in the `trusted.gpg` keyring or in the keyrings in the `trusted.gpg.d/` directory, or an ASCII armored GPG public key block.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) A source string state.
-- `suites` (String) Suite can specify an exact path in relation to the URI(s) provided, in which case the Components: must be omitted and suite must end with a slash (C(/)). Alternatively, it may take the form of a distribution version (for example a version codename like C(disco) or C(artful)). If the suite does not specify a path, at least one component must be present.
+- `suites` (String) Suite can specify an exact path in relation to the UR*s* provided, in which case the Components: must be omitted and suite must end with a slash (`/`). Alternatively, it may take the form of a distribution version (for example a version codename like `disco` or `artful`). If the suite does not specify a path, at least one component must be present.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `targets` (String) Defines which download targets apt will try to acquire from this source.
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
 - `trusted` (Boolean) Decides if a source is considered trusted or if warnings should be raised before, for example packages are installed from this source.
-- `types` (String) Which types of packages to look for from a given source; either binary V(deb) or source code V(deb-src).
+- `types` (String) Which types of packages to look for from a given source; either binary `deb` or source code `deb-src`.
 - `uris` (String) The URIs must specify the base of the Debian distribution archive, from which APT finds the information it needs.
 
 ### Read-Only

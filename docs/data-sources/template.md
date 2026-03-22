@@ -21,12 +21,12 @@ description: |-
 
 ### Optional
 
-- `follow` (Boolean) Determine whether symbolic links should be followed. When set to V(true) symbolic links will be followed, if they exist. When set to V(false) symbolic links will not be followed. Previous to Ansible 2.4, this was hardcoded as V(true).
+- `follow` (Boolean) Determine whether symbolic links should be followed. When set to `true` symbolic links will be followed, if they exist. When set to `false` symbolic links will not be followed. Previous to Ansible 2.4, this was hardcoded as `true`.
 
 ### Read-Only
 
 - `checksum` (String) SHA1 checksum of the rendered file
-- `dest` (String) Destination file/path, equal to the value passed to I(dest).
+- `dest` (String) Destination file/path, equal to the value passed to *dest*.
 - `gid` (Number) Numeric id representing the group of the owner
 - `group` (String) Group name of owner
 - `md5sum` (String) MD5 checksum of the rendered file

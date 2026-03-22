@@ -23,12 +23,12 @@ description: |-
 
 - `data` (String) The keyfile contents to add to the keyring.
 - `file` (String) The path to a keyfile on the remote server to add to the keyring.
-- `id` (String) The identifier of the key. Including this allows check mode to correctly report the changed state. If specifying a subkey's id be aware that apt-key does not understand how to remove keys via a subkey id. Specify the primary key's id instead. This parameter is required when O(state) is set to V(absent).
-- `keyring` (String) The full path to specific keyring file in C(/etc/apt/trusted.gpg.d/).
+- `id` (String) The identifier of the key. Including this allows check mode to correctly report the changed state. If specifying a subkey's id be aware that apt-key does not understand how to remove keys via a subkey id. Specify the primary key's id instead. This parameter is required when `state` is set to `absent`.
+- `keyring` (String) The full path to specific keyring file in `/etc/apt/trusted.gpg.d/`.
 - `keyserver` (String) The keyserver to retrieve key from.
 - `state` (String) Ensures that the key is present (added) or absent (revoked).
 - `url` (String) The URL to retrieve key from.
-- `validate_certs` (Boolean) If V(false), SSL certificates for the target url will not be validated. This should only be used on personally controlled sites using self-signed certificates.
+- `validate_certs` (Boolean) If `false`, SSL certificates for the target url will not be validated. This should only be used on personally controlled sites using self-signed certificates.
 
 ### Read-Only
 

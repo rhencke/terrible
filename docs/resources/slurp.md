@@ -18,7 +18,7 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `src` (String) The file on the remote system to fetch. This I(must) be a file, not a directory.
+- `src` (String) The file on the remote system to fetch. This *must* be a file, not a directory.
 
 ### Optional
 

@@ -169,9 +169,33 @@ def _tf_type_for(ansible_type: str):
     return _TYPE_MAP.get(str(ansible_type).lower(), String())
 
 
+_RST_INLINE = re.compile(r"([OCEVMP])\(([^)]*)\)|B\(([^)]*)\)|I\(([^)]*)\)|U\(([^)]*)\)|L\(([^,)]*),([^)]*)\)|R\(([^,)]*),([^)]*)\)")
+
+
+def _render_rst(text: str) -> str:
+    """Translate Ansible RST inline markup to Markdown."""
+
+    def _replace(m: re.Match) -> str:
+        if m.group(1):  # O(...) C(...) E(...) V(...) M(...) P(...)
+            return f"`{m.group(2)}`"
+        if m.group(3) is not None:  # B(...)
+            return f"**{m.group(3)}**"
+        if m.group(4) is not None:  # I(...)
+            return f"*{m.group(4)}*"
+        if m.group(5) is not None:  # U(url)
+            return m.group(5)
+        if m.group(6) is not None:  # L(text,url)
+            return f"[{m.group(6)}]({m.group(7)})"
+        # R(text,ref) — internal Ansible cross-reference; keep text only
+        return m.group(8)
+
+    return _RST_INLINE.sub(_replace, text)
+
+
 def _description(spec: dict) -> str:
     d = spec.get("description", "")
-    return " ".join(d) if isinstance(d, list) else (d or "")
+    raw = " ".join(d) if isinstance(d, list) else (d or "")
+    return _render_rst(raw)
 
 
 def _build_schema(options: dict, returns: dict) -> tuple[Schema, set[str]]:

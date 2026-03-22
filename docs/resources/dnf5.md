@@ -21,48 +21,48 @@ description: |-
 
 ### Optional
 
-- `allow_downgrade` (Boolean) Specify if the named package and version is allowed to downgrade a maybe already installed higher version of that package. Note that setting O(allow_downgrade=true) can make this module behave in a non-idempotent way. The task could end up with a set of packages that does not match the complete list of specified packages to install (because dependencies between the downgraded package and others can cause changes to the packages which were in the earlier transaction). Since this feature is not provided by C(dnf5) itself but by M(ansible.builtin.dnf5) module, using this in combination with wildcard characters in O(name) may result in an unexpected results.
-- `allowerasing` (Boolean) If V(true) it allows  erasing  of  installed  packages to resolve dependencies.
+- `allow_downgrade` (Boolean) Specify if the named package and version is allowed to downgrade a maybe already installed higher version of that package. Note that setting `allow_downgrade=true` can make this module behave in a non-idempotent way. The task could end up with a set of packages that does not match the complete list of specified packages to install (because dependencies between the downgraded package and others can cause changes to the packages which were in the earlier transaction). Since this feature is not provided by `dnf5` itself but by `ansible.builtin.dnf5` module, using this in combination with wildcard characters in `name` may result in an unexpected results.
+- `allowerasing` (Boolean) If `true` it allows  erasing  of  installed  packages to resolve dependencies.
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `auto_install_module_deps` (Boolean) Automatically install dependencies required to run this module.
-- `autoremove` (Boolean) If V(true), removes all "leaf" packages from the system that were originally installed as dependencies of user-installed packages but which are no longer required by any such package. Should be used alone or when O(state=absent).
-- `best` (Boolean) When set to V(true), either use a package with the highest version available or fail. When set to V(false), if the latest version cannot be installed go with the lower version. Default is set by the operating system distribution.
-- `bugfix` (Boolean) If set to V(true), and O(state=latest) then only installs updates that have been marked bugfix related. Note that, similar to C(dnf upgrade-minimal), this filter applies to dependencies as well.
+- `autoremove` (Boolean) If `true`, removes all "leaf" packages from the system that were originally installed as dependencies of user-installed packages but which are no longer required by any such package. Should be used alone or when `state=absent`.
+- `best` (Boolean) When set to `true`, either use a package with the highest version available or fail. When set to `false`, if the latest version cannot be installed go with the lower version. Default is set by the operating system distribution.
+- `bugfix` (Boolean) If set to `true`, and `state=latest` then only installs updates that have been marked bugfix related. Note that, similar to `dnf upgrade-minimal`, this filter applies to dependencies as well.
 - `cacheonly` (Boolean) Tells dnf to run entirely from system cache; does not download or update metadata.
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `conf_file` (String) The remote dnf configuration file to use for the transaction.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `disable_excludes` (String) Disable the excludes defined in DNF config files. If set to V(all), disables all excludes. If set to V(main), disable excludes defined in C([main]) in C(dnf.conf). If set to V(repoid), disable excludes defined for given repo id.
-- `disable_gpg_check` (Boolean) Whether to disable the GPG checking of signatures of packages being installed. Has an effect only if O(state) is V(present) or V(latest). This setting affects packages installed from a repository as well as "local" packages installed from the filesystem or a URL.
-- `disable_plugin` (String) I(Plugin) name to disable for the install/update operation. The disabled plugins will not persist beyond the transaction. O(disable_plugin) takes precedence in case a plugin is listed in both O(enable_plugin) and O(disable_plugin). Requires python3-libdnf5 5.2.0.0+.
-- `disablerepo` (String) I(Repoid) of repositories to disable for the install/update operation. These repos will not persist beyond the transaction. When specifying multiple repos, separate them with a C(,).
-- `download_dir` (String) Specifies an alternate directory to store packages. Has an effect only if O(download_only) is specified.
+- `disable_excludes` (String) Disable the excludes defined in DNF config files. If set to `all`, disables all excludes. If set to `main`, disable excludes defined in `[main]` in `dnf.conf`. If set to `repoid`, disable excludes defined for given repo id.
+- `disable_gpg_check` (Boolean) Whether to disable the GPG checking of signatures of packages being installed. Has an effect only if `state` is `present` or `latest`. This setting affects packages installed from a repository as well as "local" packages installed from the filesystem or a URL.
+- `disable_plugin` (String) *Plugin* name to disable for the install/update operation. The disabled plugins will not persist beyond the transaction. `disable_plugin` takes precedence in case a plugin is listed in both `enable_plugin` and `disable_plugin`. Requires python3-libdnf5 5.2.0.0+.
+- `disablerepo` (String) *Repoid* of repositories to disable for the install/update operation. These repos will not persist beyond the transaction. When specifying multiple repos, separate them with a `,`.
+- `download_dir` (String) Specifies an alternate directory to store packages. Has an effect only if `download_only` is specified.
 - `download_only` (Boolean) Only download the packages, do not install them.
-- `enable_plugin` (String) I(Plugin) name to enable for the install/update operation. The enabled plugin will not persist beyond the transaction. O(disable_plugin) takes precedence in case a plugin is listed in both O(enable_plugin) and O(disable_plugin). Requires python3-libdnf5 5.2.0.0+.
-- `enablerepo` (String) I(Repoid) of repositories to enable for the install/update operation. These repos will not persist beyond the transaction. When specifying multiple repos, separate them with a C(,).
+- `enable_plugin` (String) *Plugin* name to enable for the install/update operation. The enabled plugin will not persist beyond the transaction. `disable_plugin` takes precedence in case a plugin is listed in both `enable_plugin` and `disable_plugin`. Requires python3-libdnf5 5.2.0.0+.
+- `enablerepo` (String) *Repoid* of repositories to enable for the install/update operation. These repos will not persist beyond the transaction. When specifying multiple repos, separate them with a `,`.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `exclude` (String) Package name(s) to exclude when O(state=present) or O(state=latest). This can be a list or a comma separated string.
+- `exclude` (String) Package name(s) to exclude when `state=present` or `state=latest`. This can be a list or a comma separated string.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `install_weak_deps` (Boolean) Will also install all packages linked by a weak dependency relation.
 - `installroot` (String) Specifies an alternative installroot, relative to which all packages will be installed.
-- `list` (String) Various (non-idempotent) commands for usage with C(/usr/bin/ansible) and I(not) playbooks. Use M(ansible.builtin.package_facts) instead of the O(list) argument as a best practice.
+- `list` (String) Various (non-idempotent) commands for usage with `/usr/bin/ansible` and *not* playbooks. Use `ansible.builtin.package_facts` instead of the `list` argument as a best practice.
 - `lock_timeout` (Number) This is currently a no-op as dnf5 does not provide an option to configure it. Amount of time to wait for the dnf lockfile to be freed.
-- `name` (String) A package name or package specifier with version, like C(name-1.0). When using O(state=latest), this can be C(*) which means run: C(dnf -y update). You can also pass a url or a local path to an rpm file. To operate on several packages this can accept a comma separated string of packages or a list of packages. Comparison operators for package version are valid here C(>), C(<), C(>=), C(<=). Example - C(name >= 1.0). Spaces around the operator are required. You can also pass an absolute path for a binary which is provided by the package to install. See examples for more information.
-- `nobest` (Boolean) This is the opposite of the O(best) option kept for backwards compatibility. Since ansible-core 2.17 the default value is set by the operating system distribution.
+- `name` (String) A package name or package specifier with version, like `name-1.0`. When using `state=latest`, this can be `*` which means run: `dnf -y update`. You can also pass a url or a local path to an rpm file. To operate on several packages this can accept a comma separated string of packages or a list of packages. Comparison operators for package version are valid here `>`, `<`, `>=`, `<=`. Example - `name >= 1.0`. Spaces around the operator are required. You can also pass an absolute path for a binary which is provided by the package to install. See examples for more information.
+- `nobest` (Boolean) This is the opposite of the `best` option kept for backwards compatibility. Since ansible-core 2.17 the default value is set by the operating system distribution.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `releasever` (String) Specifies an alternative release from which all packages will be installed.
-- `security` (Boolean) If set to V(true), and O(state=latest) then only installs updates that have been marked security related. Note that, similar to C(dnf upgrade-minimal), this filter applies to dependencies as well.
-- `skip_broken` (Boolean) Skip all unavailable packages or packages with broken dependencies without raising an error. Equivalent to passing the C(--skip-broken) option.
+- `security` (Boolean) If set to `true`, and `state=latest` then only installs updates that have been marked security related. Note that, similar to `dnf upgrade-minimal`, this filter applies to dependencies as well.
+- `skip_broken` (Boolean) Skip all unavailable packages or packages with broken dependencies without raising an error. Equivalent to passing the `--skip-broken` option.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
-- `sslverify` (Boolean) Disables SSL validation of the repository server for this transaction. This should be set to V(false) if one of the configured repositories is using an untrusted or self-signed certificate.
-- `state` (String) Whether to install (V(present), V(latest)), or remove (V(absent)) a package. Default is V(None), however in effect the default action is V(present) unless the O(autoremove=true), then V(absent) is inferred.
+- `sslverify` (Boolean) Disables SSL validation of the repository server for this transaction. This should be set to `false` if one of the configured repositories is using an untrusted or self-signed certificate.
+- `state` (String) Whether to install (`present`, `latest`), or remove (`absent`) a package. Default is `None`, however in effect the default action is `present` unless the `autoremove=true`, then `absent` is inferred.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `update_cache` (Boolean) Force dnf to check if cache is out of date and redownload if needed. Has an effect only if O(state=present) or O(state=latest).
-- `update_only` (Boolean) When using latest, only update installed packages. Do not install packages. Has an effect only if O(state=present) or O(state=latest).
-- `validate_certs` (Boolean) This is effectively a no-op in the dnf5 module as dnf5 itself handles downloading a https url as the source of the rpm, but is an accepted parameter for feature parity/compatibility with the M(ansible.builtin.dnf) module.
+- `update_cache` (Boolean) Force dnf to check if cache is out of date and redownload if needed. Has an effect only if `state=present` or `state=latest`.
+- `update_only` (Boolean) When using latest, only update installed packages. Do not install packages. Has an effect only if `state=present` or `state=latest`.
+- `validate_certs` (Boolean) This is effectively a no-op in the dnf5 module as dnf5 itself handles downloading a https url as the source of the rpm, but is an accepted parameter for feature parity/compatibility with the `ansible.builtin.dnf` module.
 
 ### Read-Only
 

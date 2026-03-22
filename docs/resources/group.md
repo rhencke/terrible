@@ -27,17 +27,17 @@ description: |-
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `force` (Boolean) Whether to delete a group even if it is the primary group of a user. Only applicable on platforms which implement a C(--force) flag on the group deletion command.
-- `gid` (Number) Optional I(GID) to set for the group.
-- `gid_max` (Number) Sets the GID_MAX value for group creation. Overwrites /etc/login.defs default value. Currently supported on Linux. Does nothing when used with other platforms. Requires O(local) is omitted or V(False).
-- `gid_min` (Number) Sets the GID_MIN value for group creation. Overwrites /etc/login.defs default value. Currently supported on Linux. Does nothing when used with other platforms. Requires O(local) is omitted or V(False).
+- `force` (Boolean) Whether to delete a group even if it is the primary group of a user. Only applicable on platforms which implement a `--force` flag on the group deletion command.
+- `gid` (Number) Optional *GID* to set for the group.
+- `gid_max` (Number) Sets the GID_MAX value for group creation. Overwrites /etc/login.defs default value. Currently supported on Linux. Does nothing when used with other platforms. Requires `local` is omitted or `False`.
+- `gid_min` (Number) Sets the GID_MIN value for group creation. Overwrites /etc/login.defs default value. Currently supported on Linux. Does nothing when used with other platforms. Requires `local` is omitted or `False`.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `local` (Boolean) Forces the use of "local" command alternatives on platforms that implement it. This is useful in environments that use centralized authentication when you want to manipulate the local groups. (for example, it uses C(lgroupadd) instead of C(groupadd)). This requires that these commands exist on the targeted host, otherwise it will be a fatal error.
-- `non_unique` (Boolean) This option allows to change the group ID to a non-unique value. Requires O(gid). Not supported on macOS or BusyBox distributions.
+- `local` (Boolean) Forces the use of "local" command alternatives on platforms that implement it. This is useful in environments that use centralized authentication when you want to manipulate the local groups. (for example, it uses `lgroupadd` instead of `groupadd`). This requires that these commands exist on the targeted host, otherwise it will be a fatal error.
+- `non_unique` (Boolean) This option allows to change the group ID to a non-unique value. Requires `gid`. Not supported on macOS or BusyBox distributions.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether the group should be present or not on the remote host.
-- `system` (Boolean) If V(yes), indicates that the group created is a system group.
+- `system` (Boolean) If `yes`, indicates that the group created is a system group.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution

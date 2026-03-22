@@ -25,7 +25,7 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `chdir` (String) Change into this directory on the remote node before running the script.
 - `cmd` (String) Path to the local script to run followed by optional arguments.
-- `creates` (String) A filename on the remote node, when it already exists, this step will B(not) be run.
+- `creates` (String) A filename on the remote node, when it already exists, this step will **not** be run.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `executable` (String) Name or path of an executable to invoke the script with.
@@ -33,7 +33,7 @@ description: |-
 - `free_form` (String) Path to the local script file followed by optional arguments.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `removes` (String) A filename on the remote node, when it does not exist, this step will B(not) be run.
+- `removes` (String) A filename on the remote node, when it does not exist, this step will **not** be run.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.

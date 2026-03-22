@@ -24,20 +24,20 @@ description: |-
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `daemon_reexec` (Boolean) Run daemon_reexec command before doing any other operations, the systemd manager will serialize the manager state.
-- `daemon_reload` (Boolean) Run C(daemon-reload) before doing any other operations, to make sure systemd has read any changes. When set to V(true), runs C(daemon-reload) even if the module does not start or stop anything.
+- `daemon_reload` (Boolean) Run `daemon-reload` before doing any other operations, to make sure systemd has read any changes. When set to `true`, runs `daemon-reload` even if the module does not start or stop anything.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `enabled` (Boolean) Whether the unit should start on boot. At least one of O(state) or O(enabled) are required. If set, requires O(name).
+- `enabled` (Boolean) Whether the unit should start on boot. At least one of `state` or `enabled` are required. If set, requires `name`.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `force` (Boolean) Whether to override existing symlinks.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `masked` (Boolean) Whether the unit should be masked or not. A masked unit is impossible to start. If set, requires O(name).
-- `name` (String) Name of the unit. This parameter takes the name of exactly one unit to work with. When no extension is given, it is implied to a C(.service) as systemd. When using in a chroot environment you always need to specify the name of the unit with the extension. For example, C(crond.service).
+- `masked` (Boolean) Whether the unit should be masked or not. A masked unit is impossible to start. If set, requires `name`.
+- `name` (String) Name of the unit. This parameter takes the name of exactly one unit to work with. When no extension is given, it is implied to a `.service` as systemd. When using in a chroot environment you always need to specify the name of the unit with the extension. For example, `crond.service`.
 - `no_block` (Boolean) Do not synchronously wait for the requested operation to finish. Enqueued job will continue without Ansible blocking on its completion.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `scope` (String) Run C(systemctl) within a given service manager scope, either as the default system scope V(system), the current user's scope V(user), or the scope of all users V(global). For systemd to work with V(user), the executing user must have its own instance of dbus started and accessible (systemd requirement). The user dbus process is normally started during normal login, but not during the run of Ansible tasks. Otherwise you will probably get a 'Failed to connect to bus: no such file or directory' error. The user must have access, normally given via setting the C(XDG_RUNTIME_DIR) variable, see the example below.
+- `scope` (String) Run `systemctl` within a given service manager scope, either as the default system scope `system`, the current user's scope `user`, or the scope of all users `global`. For systemd to work with `user`, the executing user must have its own instance of dbus started and accessible (systemd requirement). The user dbus process is normally started during normal login, but not during the run of Ansible tasks. Otherwise you will probably get a 'Failed to connect to bus: no such file or directory' error. The user must have access, normally given via setting the `XDG_RUNTIME_DIR` variable, see the example below.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
-- `state` (String) V(started)/V(stopped) are idempotent actions that will not run commands unless necessary. V(restarted) will always bounce the unit. V(reloaded) will always reload and if the service is not running at the moment of the reload, it is started. If set, requires O(name).
+- `state` (String) `started`/`stopped` are idempotent actions that will not run commands unless necessary. `restarted` will always bounce the unit. `reloaded` will always reload and if the service is not running at the moment of the reload, it is started. If set, requires `name`.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
@@ -46,4 +46,4 @@ description: |-
 
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `status` (String) A dictionary with the key=value pairs returned from C(systemctl show).
+- `status` (String) A dictionary with the key=value pairs returned from `systemctl show`.

@@ -18,10 +18,10 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this data source against
-- `that` (String) A list of string expressions of the same form that can be passed to the C(when) statement.
+- `that` (String) A list of string expressions of the same form that can be passed to the `when` statement.
 
 ### Optional
 
-- `fail_msg` (String) The customized message used for a failing assertion. This argument was called O(msg) before Ansible 2.7, now it is renamed to O(fail_msg) with alias O(msg).
-- `quiet` (Boolean) Set this to V(true) to avoid verbose output.
+- `fail_msg` (String) The customized message used for a failing assertion. This argument was called `msg` before Ansible 2.7, now it is renamed to `fail_msg` with alias `msg`.
+- `quiet` (Boolean) Set this to `true` to avoid verbose output.
 - `success_msg` (String) The customized message used for a successful assertion.

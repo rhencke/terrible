@@ -23,14 +23,14 @@ description: |-
 ### Optional
 
 - `codename` (String) Override the distribution codename to use for PPA repositories. Should usually only be set when working with a PPA on a non-Ubuntu target (for example, Debian or Mint).
-- `filename` (String) Sets the name of the source list file in C(sources.list.d). Defaults to a file name based on the repository source url. The C(.list) extension will be automatically added.
-- `install_python_apt` (Boolean) Whether to automatically try to install the Python apt library or not, if it is not already installed. Without this library, the module does not work. Runs C(apt-get install python3-apt). Only works with the system Python. If you are using a Python on the remote that is not the system Python, set O(install_python_apt=false) and ensure that the Python apt library for your Python version is installed some other way.
-- `mode` (String) The octal mode for newly created files in C(sources.list.d). Default is what system uses (probably 0644).
+- `filename` (String) Sets the name of the source list file in `sources.list.d`. Defaults to a file name based on the repository source url. The `.list` extension will be automatically added.
+- `install_python_apt` (Boolean) Whether to automatically try to install the Python apt library or not, if it is not already installed. Without this library, the module does not work. Runs `apt-get install python3-apt`. Only works with the system Python. If you are using a Python on the remote that is not the system Python, set `install_python_apt=false` and ensure that the Python apt library for your Python version is installed some other way.
+- `mode` (String) The octal mode for newly created files in `sources.list.d`. Default is what system uses (probably 0644).
 - `state` (String) A source string state.
-- `update_cache` (Boolean) Run the equivalent of C(apt-get update) when a change occurs. Cache updates are run after making changes.
-- `update_cache_retries` (Number) Amount of retries if the cache update fails. Also see O(update_cache_retry_max_delay).
-- `update_cache_retry_max_delay` (Number) Use an exponential backoff delay for each retry (see O(update_cache_retries)) up to this max delay in seconds.
-- `validate_certs` (Boolean) If V(false), SSL certificates for the target repo will not be validated. This should only be used on personally controlled sites using self-signed certificates.
+- `update_cache` (Boolean) Run the equivalent of `apt-get update` when a change occurs. Cache updates are run after making changes.
+- `update_cache_retries` (Number) Amount of retries if the cache update fails. Also see `update_cache_retry_max_delay`.
+- `update_cache_retry_max_delay` (Number) Use an exponential backoff delay for each retry (see `update_cache_retries`) up to this max delay in seconds.
+- `validate_certs` (Boolean) If `false`, SSL certificates for the target repo will not be validated. This should only be used on personally controlled sites using self-signed certificates.
 
 ### Read-Only
 

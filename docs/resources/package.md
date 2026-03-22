@@ -18,8 +18,8 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `name` (String) Package name, or package specifier with version. Syntax varies with package manager. For example V(name-1.0) or V(name=1.0). Package names also vary with package manager; this module will not "translate" them per distribution. For example V(libyaml-dev), V(libyaml-devel). To operate on several packages this can accept a comma separated string of packages or a list of packages, depending on the underlying package manager.
-- `state` (String) Whether to install (V(present)), or remove (V(absent)) a package. You can use other states like V(latest) ONLY if they are supported by the underlying package module(s) executed.
+- `name` (String) Package name, or package specifier with version. Syntax varies with package manager. For example `name-1.0` or `name=1.0`. Package names also vary with package manager; this module will not "translate" them per distribution. For example `libyaml-dev`, `libyaml-devel`. To operate on several packages this can accept a comma separated string of packages or a list of packages, depending on the underlying package manager.
+- `state` (String) Whether to install (`present`), or remove (`absent`) a package. You can use other states like `latest` ONLY if they are supported by the underlying package module(s) executed.
 
 ### Optional
 
@@ -34,7 +34,7 @@ description: |-
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `use` (String) The required package manager module to use (V(dnf), V(apt), and so on). The default V(auto) will use existing facts or try to auto-detect it. You should only use this field if the automatic selection is not working for some reason. Since version 2.17 you can use the C(ansible_package_use) variable to override the automatic detection, but this option still takes precedence.
+- `use` (String) The required package manager module to use (`dnf`, `apt`, and so on). The default `auto` will use existing facts or try to auto-detect it. You should only use this field if the automatic selection is not working for some reason. Since version 2.17 you can use the `ansible_package_use` variable to override the automatic detection, but this option still takes precedence.
 
 ### Read-Only
 

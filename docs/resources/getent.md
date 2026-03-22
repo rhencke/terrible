@@ -26,14 +26,14 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `fail_key` (Boolean) If a supplied key is missing this will make the task fail if V(true).
+- `fail_key` (Boolean) If a supplied key is missing this will make the task fail if `true`.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `key` (String) Key from which to return values from the specified database, otherwise the full contents are returned.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `service` (String) Override all databases with the specified service The underlying system must support the service flag which is not always available.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
-- `split` (String) Character used to split the database values into lists/arrays such as V(:) or V(\\t), otherwise it will try to pick one depending on the database.
+- `split` (String) Character used to split the database values into lists/arrays such as `:` or `\\t`, otherwise it will try to pick one depending on the database.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution

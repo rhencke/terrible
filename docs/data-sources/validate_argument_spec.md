@@ -17,7 +17,7 @@ description: |-
 
 ### Required
 
-- `argument_spec` (String) A dictionary like AnsibleModule argument_spec. See the C(options) parameter for the R(specification format,role_argument_spec).
+- `argument_spec` (String) A dictionary like AnsibleModule argument_spec. See the `options` parameter for the specification format.
 - `host_id` (String) ID of the `terrible_host` to run this data source against
 
 ### Optional

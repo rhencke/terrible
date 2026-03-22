@@ -21,9 +21,9 @@ description: |-
 
 ### Optional
 
-- `echo` (Boolean) Controls whether or not keyboard input is shown when typing. Only has effect if neither O(seconds) nor O(minutes) are set.
+- `echo` (Boolean) Controls whether or not keyboard input is shown when typing. Only has effect if neither `seconds` nor `minutes` are set.
 - `minutes` (String) A positive number of minutes to pause for.
-- `prompt` (String) Optional text to use for the prompt message. User input is only returned if O(seconds) and O(minutes) are both not specified, otherwise this is just a custom message before playbook execution is paused.
+- `prompt` (String) Optional text to use for the prompt message. User input is only returned if `seconds` and `minutes` are both not specified, otherwise this is just a custom message before playbook execution is paused.
 - `seconds` (String) A positive number of seconds to pause for.
 
 ### Read-Only

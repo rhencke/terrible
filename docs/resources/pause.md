@@ -24,13 +24,13 @@ description: |-
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `echo` (Boolean) Controls whether or not keyboard input is shown when typing. Only has effect if neither O(seconds) nor O(minutes) are set.
+- `echo` (Boolean) Controls whether or not keyboard input is shown when typing. Only has effect if neither `seconds` nor `minutes` are set.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `minutes` (String) A positive number of minutes to pause for.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `prompt` (String) Optional text to use for the prompt message. User input is only returned if O(seconds) and O(minutes) are both not specified, otherwise this is just a custom message before playbook execution is paused.
+- `prompt` (String) Optional text to use for the prompt message. User input is only returned if `seconds` and `minutes` are both not specified, otherwise this is just a custom message before playbook execution is paused.
 - `seconds` (String) A positive number of seconds to pause for.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).

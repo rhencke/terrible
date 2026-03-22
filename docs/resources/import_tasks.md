@@ -27,8 +27,8 @@ description: |-
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `file` (String) Specifies the name of the file that lists tasks to add to the current playbook.
-- `free-form` (String) Specifies the name of the imported file directly without any other option C(- import_tasks: file.yml).
- Most keywords, including loops and conditionals, only apply to the imported tasks, not to this statement itself. If you need any of those to apply, use M(ansible.builtin.include_tasks) instead.
+- `free-form` (String) Specifies the name of the imported file directly without any other option `- import_tasks: file.yml`.
+ Most keywords, including loops and conditionals, only apply to the imported tasks, not to this statement itself. If you need any of those to apply, use `ansible.builtin.include_tasks` instead.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).

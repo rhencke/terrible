@@ -21,23 +21,23 @@ description: |-
 
 ### Optional
 
-- `argv` (String) Passes the command as a list rather than a string. Use O(argv) to avoid quoting values that would otherwise be interpreted incorrectly (for example "user name"). Only the string (free form) or the list (argv) form can be provided, not both.  One or the other must be provided.
+- `argv` (String) Passes the command as a list rather than a string. Use `argv` to avoid quoting values that would otherwise be interpreted incorrectly (for example "user name"). Only the string (free form) or the list (argv) form can be provided, not both.  One or the other must be provided.
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `chdir` (String) Change into this directory before running the command.
 - `cmd` (String) The command to run.
-- `creates` (String) A filename or (since 2.0) glob pattern. If a matching file already exists, this step B(will not) be run. This is checked before O(removes) is checked.
+- `creates` (String) A filename or (since 2.0) glob pattern. If a matching file already exists, this step **will not** be run. This is checked before `removes` is checked.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `expand_argument_vars` (Boolean) Expands the arguments that are variables, for example C($HOME) will be expanded before being passed to the command to run. If a variable is not matched, it is left unchanged, unlike shell substitution which would remove it. Set to V(false) to disable expansion and treat the value as a literal argument.
+- `expand_argument_vars` (Boolean) Expands the arguments that are variables, for example `$HOME` will be expanded before being passed to the command to run. If a variable is not matched, it is left unchanged, unlike shell substitution which would remove it. Set to `false` to disable expansion and treat the value as a literal argument.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `free_form` (String) The command module takes a free form string as a command to run. There is no actual parameter named C(free_form).
+- `free_form` (String) The command module takes a free form string as a command to run. There is no actual parameter named `free_form`.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `removes` (String) A filename or (since 2.0) glob pattern. If a matching file exists, this step B(will) be run. This is checked after O(creates) is checked.
+- `removes` (String) A filename or (since 2.0) glob pattern. If a matching file exists, this step **will** be run. This is checked after `creates` is checked.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `stdin` (String) Set the stdin of the command directly to the specified value.
-- `stdin_add_newline` (Boolean) If set to V(true), append a newline to stdin data.
+- `stdin_add_newline` (Boolean) If set to `true`, append a newline to stdin data.
 - `strip_empty_ends` (Boolean) Strip empty lines from the end of stdout/stderr in result.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.

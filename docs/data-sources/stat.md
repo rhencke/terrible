@@ -25,8 +25,8 @@ description: |-
 - `follow` (Boolean) Whether to follow symlinks.
 - `get_attributes` (Boolean) Get file attributes using lsattr tool if present.
 - `get_checksum` (String)
-- `get_mime` (Boolean) Use file magic and return data about the nature of the file. This uses the C(file) utility found on most Linux/Unix systems. This will add both RV(stat.mimetype) and RV(stat.charset) fields to the return, if possible. In Ansible 2.3 this option changed from O(mime) to O(get_mime) and the default changed to V(true).
-- `get_selinux_context` (Boolean) Get file SELinux context in a list V([user, role, type, range]), and will get V([None, None, None, None]) if it is not possible to retrieve the context, either because it does not exist or some other issue.
+- `get_mime` (Boolean) Use file magic and return data about the nature of the file. This uses the `file` utility found on most Linux/Unix systems. This will add both R`stat.mimetype` and R`stat.charset` fields to the return, if possible. In Ansible 2.3 this option changed from `mime` to `get_mime` and the default changed to `true`.
+- `get_selinux_context` (Boolean) Get file SELinux context in a list `[user, role, type, range]`, and will get `[None, None, None, None]` if it is not possible to retrieve the context, either because it does not exist or some other issue.
 
 ### Read-Only
 

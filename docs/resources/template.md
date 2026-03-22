@@ -26,7 +26,7 @@ description: |-
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `follow` (Boolean) Determine whether symbolic links should be followed. When set to V(true) symbolic links will be followed, if they exist. When set to V(false) symbolic links will not be followed. Previous to Ansible 2.4, this was hardcoded as V(true).
+- `follow` (Boolean) Determine whether symbolic links should be followed. When set to `true` symbolic links will be followed, if they exist. When set to `false` symbolic links will not be followed. Previous to Ansible 2.4, this was hardcoded as `true`.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
@@ -38,7 +38,7 @@ description: |-
 
 - `changed` (Boolean) Whether the task reported a change
 - `checksum` (String) SHA1 checksum of the rendered file
-- `dest` (String) Destination file/path, equal to the value passed to I(dest).
+- `dest` (String) Destination file/path, equal to the value passed to *dest*.
 - `gid` (Number) Numeric id representing the group of the owner
 - `group` (String) Group name of owner
 - `id` (String) Unique task resource ID

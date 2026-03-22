@@ -18,15 +18,15 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `path` (String) The file to modify. Before Ansible 2.3 this option was only usable as O(dest), O(destfile) and O(name).
-- `regexp` (String) The regular expression to look for in the contents of the file. Uses Python regular expressions; see U(https://docs.python.org/3/library/re.html). Uses MULTILINE mode, which means V(^) and V($) match the beginning and end of the file, as well as the beginning and end respectively of I(each line) of the file. Does not use DOTALL, which means the V(.) special character matches any character I(except newlines). A common mistake is to assume that a negated character set like V([^#]) will also not match newlines. In order to exclude newlines, they must be added to the set like V([^#\\n]). Note that, as of Ansible 2.0, short form tasks should have any escape sequences backslash-escaped in order to prevent them being parsed as string literal escapes. See the examples.
+- `path` (String) The file to modify. Before Ansible 2.3 this option was only usable as `dest`, `destfile` and `name`.
+- `regexp` (String) The regular expression to look for in the contents of the file. Uses Python regular expressions; see https://docs.python.org/3/library/re.html. Uses MULTILINE mode, which means `^` and `$` match the beginning and end of the file, as well as the beginning and end respectively of *each line* of the file. Does not use DOTALL, which means the `.` special character matches any character *except newlines*. A common mistake is to assume that a negated character set like `[^#]` will also not match newlines. In order to exclude newlines, they must be added to the set like `[^#\\n]`. Note that, as of Ansible 2.0, short form tasks should have any escape sequences backslash-escaped in order to prevent them being parsed as string literal escapes. See the examples.
 
 ### Optional
 
-- `after` (String) If specified, only content after this match will be replaced/removed. Can be used in combination with O(before). Uses Python regular expressions; see U(https://docs.python.org/3/library/re.html). Uses DOTALL, which means the V(.) special character I(can match newlines). Does not use MULTILINE, so V(^) and V($) will only match the beginning and end of the file.
+- `after` (String) If specified, only content after this match will be replaced/removed. Can be used in combination with `before`. Uses Python regular expressions; see https://docs.python.org/3/library/re.html. Uses DOTALL, which means the `.` special character *can match newlines*. Does not use MULTILINE, so `^` and `$` will only match the beginning and end of the file.
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `backup` (Boolean) Create a backup file including the timestamp information so you can get the original file back if you somehow clobbered it incorrectly.
-- `before` (String) If specified, only content before this match will be replaced/removed. Can be used in combination with O(after). Uses Python regular expressions; see U(https://docs.python.org/3/library/re.html). Uses DOTALL, which means the V(.) special character I(can match newlines). Does not use MULTILINE, so V(^) and V($) will only match the beginning and end of the file.
+- `before` (String) If specified, only content before this match will be replaced/removed. Can be used in combination with `after`. Uses Python regular expressions; see https://docs.python.org/3/library/re.html. Uses DOTALL, which means the `.` special character *can match newlines*. Does not use MULTILINE, so `^` and `$` will only match the beginning and end of the file.
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `encoding` (String) The character encoding for reading and writing the file.
@@ -34,7 +34,7 @@ description: |-
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `replace` (String) The string to replace regexp matches. May contain backreferences that will get expanded with the regexp capture groups if the regexp matches. If not set, matches are removed entirely. Backreferences can be used ambiguously like V(\\1), or explicitly like V(\\g<1>).
+- `replace` (String) The string to replace regexp matches. May contain backreferences that will get expanded with the regexp capture groups if the regexp matches. If not set, matches are removed entirely. Backreferences can be used ambiguously like `\\1`, or explicitly like `\\g<1>`.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.

@@ -24,22 +24,22 @@ description: |-
 ### Optional
 
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
-- `backup` (Boolean) Create a backup file (if V(true)), including the timestamp information so you can get the original file back if you somehow clobbered it incorrectly.
+- `backup` (Boolean) Create a backup file (if `true`), including the timestamp information so you can get the original file back if you somehow clobbered it incorrectly.
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `delimiter` (String) A delimiter to separate the file contents.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `ignore_hidden` (Boolean) A boolean that controls if files that start with a C(.) will be included or not.
+- `ignore_hidden` (Boolean) A boolean that controls if files that start with a `.` will be included or not.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `regexp` (String) Assemble files only if the given regular expression matches the filename. If not set, all files are assembled. Every V(\\) (backslash) must be escaped as V(\\\\) to comply to YAML syntax. Uses L(Python regular expressions,https://docs.python.org/3/library/re.html).
-- `remote_src` (Boolean) If V(false), it will search for src at originating/master machine. If V(true), it will go to the remote/target machine for the src.
+- `regexp` (String) Assemble files only if the given regular expression matches the filename. If not set, all files are assembled. Every `\\` (backslash) must be escaped as `\\\\` to comply to YAML syntax. Uses [Python regular expressions](https://docs.python.org/3/library/re.html).
+- `remote_src` (Boolean) If `false`, it will search for src at originating/master machine. If `true`, it will go to the remote/target machine for the src.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `validate` (String) The validation command to run before copying into place. The path to the file to validate is passed in by C(%s) which must be present as in the sshd example below. The command is passed securely so shell features like expansion and pipes won't work.
+- `validate` (String) The validation command to run before copying into place. The path to the file to validate is passed in by `%s` which must be present as in the sshd example below. The command is passed securely so shell features like expansion and pipes won't work.
 
 ### Read-Only
 

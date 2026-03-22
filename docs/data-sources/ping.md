@@ -21,8 +21,8 @@ description: |-
 
 ### Optional
 
-- `data` (String) Data to return for the RV(ping) return value. If this parameter is set to V(crash), the module will cause an exception.
+- `data` (String) Data to return for the R`ping` return value. If this parameter is set to `crash`, the module will cause an exception.
 
 ### Read-Only
 
-- `ping` (String) Value provided with the O(data) parameter.
+- `ping` (String) Value provided with the `data` parameter.

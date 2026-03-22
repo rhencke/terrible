@@ -23,24 +23,24 @@ description: |-
 ### Optional
 
 - `allow_duplicates` (Boolean) Overrides the role's metadata setting to allow using a role more than once with the same parameters.
-- `apply` (String) Accepts a hash of task keywords (for example C(tags), C(become)) that will be applied to all tasks within the included role.
+- `apply` (String) Accepts a hash of task keywords (for example `tags`, `become`) that will be applied to all tasks within the included role.
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
-- `defaults_from` (String) File to load from a role's C(defaults/) directory.
+- `defaults_from` (String) File to load from a role's `defaults/` directory.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
-- `handlers_from` (String) File to load from a role's C(handlers/) directory.
+- `handlers_from` (String) File to load from a role's `handlers/` directory.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `public` (Boolean) This option dictates whether the role's C(vars) and C(defaults) are exposed to the play. If set to V(true) the variables will be available to tasks following the C(include_role) task. This functionality differs from standard variable exposure for roles listed under the C(roles) header or M(ansible.builtin.import_role) as they are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well.
+- `public` (Boolean) This option dictates whether the role's `vars` and `defaults` are exposed to the play. If set to `true` the variables will be available to tasks following the `include_role` task. This functionality differs from standard variable exposure for roles listed under the `roles` header or `ansible.builtin.import_role` as they are exposed to the play at playbook parsing time, and available to earlier roles and tasks as well.
 - `rolespec_validate` (Boolean) Perform role argument spec validation if an argument spec is defined.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
-- `tasks_from` (String) File to load from a role's C(tasks/) directory.
+- `tasks_from` (String) File to load from a role's `tasks/` directory.
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `vars_from` (String) File to load from a role's C(vars/) directory.
+- `vars_from` (String) File to load from a role's `vars/` directory.
 
 ### Read-Only
 

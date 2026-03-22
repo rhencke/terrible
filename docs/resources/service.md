@@ -26,20 +26,20 @@ description: |-
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
-- `enabled` (Boolean) Whether the service should start on boot. At least one of O(state) and O(enabled) are required.
+- `enabled` (Boolean) Whether the service should start on boot. At least one of `state` and `enabled` are required.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `pattern` (String) If the service does not respond to the status command, name a substring to look for as would be found in the output of the C(ps) command as a stand-in for a status result. If the string is found, the service will be assumed to be started. While using remote hosts with systemd this setting will be ignored.
+- `pattern` (String) If the service does not respond to the status command, name a substring to look for as would be found in the output of the `ps` command as a stand-in for a status result. If the string is found, the service will be assumed to be started. While using remote hosts with systemd this setting will be ignored.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `runlevel` (String) For OpenRC init scripts (e.g. Gentoo) only. The runlevel that this service belongs to. While using remote hosts with systemd this setting will be ignored.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
-- `sleep` (Number) If the service is being V(restarted) then sleep this many seconds between the stop and start command. This helps to work around badly-behaving init scripts that exit immediately after signaling a process to stop. Not all service managers support sleep, i.e when using systemd this setting will be ignored.
-- `state` (String) V(started)/V(stopped) are idempotent actions that will not run commands unless necessary. V(restarted) will always bounce the service. V(reloaded) will always reload. At least one of O(state) and O(enabled) are required. Note that V(reloaded) will start the service if it is not already started, even if your chosen init system wouldn't normally.
+- `sleep` (Number) If the service is being `restarted` then sleep this many seconds between the stop and start command. This helps to work around badly-behaving init scripts that exit immediately after signaling a process to stop. Not all service managers support sleep, i.e when using systemd this setting will be ignored.
+- `state` (String) `started`/`stopped` are idempotent actions that will not run commands unless necessary. `restarted` will always bounce the service. `reloaded` will always reload. At least one of `state` and `enabled` are required. Note that `reloaded` will start the service if it is not already started, even if your chosen init system wouldn't normally.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (String) Arbitrary map of values; any change triggers task re-execution
-- `use` (String) The service module actually uses system specific modules, normally through auto detection, this setting can force a specific module. Normally it uses the value of the C(ansible_service_mgr) fact and falls back to the C(ansible.legacy.service) module when none matching is found. The 'old service module' still uses autodetection and in no way does it correspond to the C(service) command.
+- `use` (String) The service module actually uses system specific modules, normally through auto detection, this setting can force a specific module. Normally it uses the value of the `ansible_service_mgr` fact and falls back to the `ansible.legacy.service` module when none matching is found. The 'old service module' still uses autodetection and in no way does it correspond to the `service` command.
 
 ### Read-Only
 

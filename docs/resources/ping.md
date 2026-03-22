@@ -23,7 +23,7 @@ description: |-
 
 - `async_seconds` (Number) Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
-- `data` (String) Data to return for the RV(ping) return value. If this parameter is set to V(crash), the module will cause an exception.
+- `data` (String) Data to return for the R`ping` return value. If this parameter is set to `crash`, the module will cause an exception.
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
@@ -38,4 +38,4 @@ description: |-
 
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `ping` (String) Value provided with the O(data) parameter.
+- `ping` (String) Value provided with the `data` parameter.

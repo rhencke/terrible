@@ -17,12 +17,12 @@ description: |-
 
 ### Required
 
-- `dest` (String) A directory to save the file into. For example, if O(dest=/backup), then O(src=/etc/profile) on host C(host.example.com), would save the file into C(/backup/host.example.com/etc/profile). The host name is based on the inventory name.
+- `dest` (String) A directory to save the file into. For example, if `dest=/backup`, then `src=/etc/profile` on host `host.example.com`, would save the file into `/backup/host.example.com/etc/profile`. The host name is based on the inventory name.
 - `host_id` (String) ID of the `terrible_host` to run this data source against
-- `src` (String) The file on the remote system to fetch. This I(must) be a file, not a directory. Recursive fetching may be supported in a later release.
+- `src` (String) The file on the remote system to fetch. This *must* be a file, not a directory. Recursive fetching may be supported in a later release.
 
 ### Optional
 
-- `fail_on_missing` (Boolean) When set to V(true), the task will fail if the remote file cannot be read for any reason. Prior to Ansible 2.5, setting this would only fail if the source file was missing. The default was changed to V(true) in Ansible 2.5.
-- `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If O(dest) ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
+- `fail_on_missing` (Boolean) When set to `true`, the task will fail if the remote file cannot be read for any reason. Prior to Ansible 2.5, setting this would only fail if the source file was missing. The default was changed to `true` in Ansible 2.5.
+- `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If `dest` ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
 - `validate_checksum` (Boolean) Verify that the source and destination checksums match after the files are fetched.

@@ -18,7 +18,7 @@ description: |-
 ### Required
 
 - `host_id` (String) ID of the `terrible_host` to run this task against
-- `that` (String) A list of string expressions of the same form that can be passed to the C(when) statement.
+- `that` (String) A list of string expressions of the same form that can be passed to the `when` statement.
 
 ### Optional
 
@@ -26,11 +26,11 @@ description: |-
 - `changed_when` (String) Jinja2 expression that overrides when the task is considered changed (e.g. 'false').
 - `delegate_to_id` (String) ID of another terrible_host to delegate execution to.
 - `environment` (String) Environment variables set for the task (dict of name→value).
-- `fail_msg` (String) The customized message used for a failing assertion. This argument was called O(msg) before Ansible 2.7, now it is renamed to O(fail_msg) with alias O(msg).
+- `fail_msg` (String) The customized message used for a failing assertion. This argument was called `msg` before Ansible 2.7, now it is renamed to `fail_msg` with alias `msg`.
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `quiet` (Boolean) Set this to V(true) to avoid verbose output.
+- `quiet` (Boolean) Set this to `true` to avoid verbose output.
 - `skip_tags` (String) Skip tasks with these Ansible tags (list of strings).
 - `success_msg` (String) The customized message used for a successful assertion.
 - `tags` (String) Run only tasks with these Ansible tags (list of strings).
