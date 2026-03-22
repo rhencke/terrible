@@ -1,12 +1,13 @@
 unexport VIRTUAL_ENV
 
-.PHONY: help test integration-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
+.PHONY: help check test integration-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
 
 help:
 	@echo "Makefile targets:"
+	@echo "  check                  - lint + typecheck + test-all + docs check (used by CI and pre-commit)"
 	@echo "  test                   - run unit tests with 100% coverage"
 	@echo "  integration-test       - run integration tests against localhost"
-	@echo "  test-all               - run unit + integration tests (same as pre-commit hook)"
+	@echo "  test-all               - run unit + integration tests"
 	@echo "  install-hooks          - install git pre-commit hook"
 	@echo "  install-provider       - install provider into local terraform plugin registry"
 	@echo "  run-provider           - run provider in dev mode (prints TF_REATTACH_PROVIDERS)"
@@ -19,6 +20,9 @@ help:
 	@echo "  format                 - auto-format code with ruff (explicit action)"
 	@echo "  docs                   - generate Terraform Registry docs into docs/ (requires install-provider)"
 	@echo "  release VERSION=x.y.z  - run tests, tag, push, and create GitHub release (notes from stdin)"
+
+check: lint typecheck test-all
+	scripts/check-docs.sh
 
 lint:
 	uv run ruff check terrible_provider/ tests/
