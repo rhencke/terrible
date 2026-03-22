@@ -174,6 +174,8 @@ def _run_module(
     from ansible.utils.context_objects import CLIArgs
     from ansible.vars.manager import VariableManager
 
+    # args_dict values are plain Python strings from JSON — no TrustedAsTemplate
+    # tag, so Ansible 13.x will not template them. Jinja2 is neutered for free.
     args_dict = json.loads(args) if args else {}
 
     with _run_module_lock:

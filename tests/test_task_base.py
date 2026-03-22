@@ -617,6 +617,32 @@ class TestRunModule:
             result = _run_module(self._HOST, "ansible.builtin.command", '{"_raw_params": "true"}')
         assert result["rc"] == 0
 
+    def test_jinja2_in_args_not_templated(self):
+        # Ansible 13.x does not template plain Python strings — only strings
+        # tagged with TrustedAsTemplate are rendered. JSON-parsed args are plain
+        # str, so {{ }} passes through as a literal. This test pins that guarantee.
+        captured = {}
+
+        class _CaptureTQM:
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                captured["args"] = play._ds["tasks"][0].get("args", {})
+                for cb in self._callback_plugins:
+                    if hasattr(cb, "result") and cb.result is None:
+                        cb.result = {"changed": False}
+
+            def cleanup(self):
+                pass
+
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _CaptureTQM):
+            _run_module(self._HOST, "ansible.builtin.command", '{"_raw_params": "echo {{ greeting }}"}')
+        assert captured["args"].get("_raw_params") == "echo {{ greeting }}"
+
     def test_check_only_true(self):
         MockTQM = _make_mock_tqm({"changed": False})
         with patch("ansible.executor.task_queue_manager.TaskQueueManager", MockTQM):
