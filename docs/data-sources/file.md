@@ -35,4 +35,3 @@ description: |-
 ### Read-Only
 
 - `dest` (String) Destination file/path, equal to the value passed to O(path).
-- `result` (String) Full raw JSON result from Ansible

@@ -74,4 +74,3 @@ description: |-
 ### Read-Only
 
 - `repo` (String) repository name
-- `result` (String) Full raw JSON result from Ansible

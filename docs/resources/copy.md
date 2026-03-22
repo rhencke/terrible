@@ -53,7 +53,6 @@ description: |-
 - `id` (String) Unique task resource ID
 - `md5sum` (String) MD5 checksum of the file after running copy.
 - `owner` (String) Owner of the file, after execution.
-- `result` (String) Full raw JSON result from Ansible
 - `size` (Number) Size of the target, after execution.
 - `state` (String) State of the target, after execution.
 - `uid` (Number) Owner id of the file, after execution.

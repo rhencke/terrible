@@ -47,5 +47,4 @@ description: |-
 - `examined` (Number) Number of filesystem objects looked at
 - `files` (String) All matches found with the specified criteria (see stat module for full output of each dictionary)
 - `matched` (Number) Number of matches
-- `result` (String) Full raw JSON result from Ansible
 - `skipped_paths` (String) skipped paths and reasons they were skipped

@@ -29,7 +29,3 @@ description: |-
 - `regexp` (String) Assemble files only if the given regular expression matches the filename. If not set, all files are assembled. Every V(\\) (backslash) must be escaped as V(\\\\) to comply to YAML syntax. Uses L(Python regular expressions,https://docs.python.org/3/library/re.html).
 - `remote_src` (Boolean) If V(false), it will search for src at originating/master machine. If V(true), it will go to the remote/target machine for the src.
 - `validate` (String) The validation command to run before copying into place. The path to the file to validate is passed in by C(%s) which must be present as in the sshd example below. The command is passed securely so shell features like expansion and pipes won't work.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

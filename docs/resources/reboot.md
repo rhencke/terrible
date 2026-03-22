@@ -48,4 +48,3 @@ description: |-
 - `elapsed` (Number) The number of seconds that elapsed waiting for the system to be rebooted.
 - `id` (String) Unique task resource ID
 - `rebooted` (Boolean) true if the machine was rebooted
-- `result` (String) Full raw JSON result from Ansible

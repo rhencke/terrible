@@ -36,5 +36,4 @@ description: |-
 - `before` (String) List of apt key ids or fingprints before any modifications
 - `fp` (String) Fingerprint of the key to import
 - `key_id` (String) calculated key id, it should be same as 'id', but can be different
-- `result` (String) Full raw JSON result from Ansible
 - `short_id` (String) calculated short key id

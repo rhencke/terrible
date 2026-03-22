@@ -26,7 +26,3 @@ description: |-
 - `fail_on_missing` (Boolean) When set to V(true), the task will fail if the remote file cannot be read for any reason. Prior to Ansible 2.5, setting this would only fail if the source file was missing. The default was changed to V(true) in Ansible 2.5.
 - `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If O(dest) ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
 - `validate_checksum` (Boolean) Verify that the source and destination checksums match after the files are fetched.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

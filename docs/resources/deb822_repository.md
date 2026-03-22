@@ -63,4 +63,3 @@ description: |-
 - `id` (String) Unique task resource ID
 - `key_filename` (String) Path to the signed_by key file
 - `repo` (String) A source string for the repository
-- `result` (String) Full raw JSON result from Ansible

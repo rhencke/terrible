@@ -24,7 +24,3 @@ description: |-
 - `msg` (String) The customized message that is printed. If omitted, prints a generic message.
 - `var` (String) A variable name to debug. Mutually exclusive with the O(msg) option. Be aware that this option already runs in Jinja2 context and has an implicit C({{ }}) wrapping, so you should not be using Jinja2 delimiters unless you are looking for double interpolation.
 - `verbosity` (Number) A number that controls when the debug is run, if you set to 3 it will only run debug when -vvv or above.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

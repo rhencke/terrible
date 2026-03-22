@@ -67,4 +67,3 @@ description: |-
 - `git_dir_now` (String) Contains the new path of .git directory if it is changed.
 - `id` (String) Unique task resource ID
 - `remote_url_changed` (Boolean) Contains True or False whether or not the remote URL was changed.
-- `result` (String) Full raw JSON result from Ansible

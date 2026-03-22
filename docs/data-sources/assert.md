@@ -25,7 +25,3 @@ description: |-
 - `fail_msg` (String) The customized message used for a failing assertion. This argument was called O(msg) before Ansible 2.7, now it is renamed to O(fail_msg) with alias O(msg).
 - `quiet` (Boolean) Set this to V(true) to avoid verbose output.
 - `success_msg` (String) The customized message used for a successful assertion.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

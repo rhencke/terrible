@@ -71,5 +71,4 @@ description: |-
 - `id` (String) Unique task resource ID
 - `msg` (String) Additional information about the result
 - `rc` (Number) For compatibility, 0 for success, 1 for failure
-- `result` (String) Full raw JSON result from Ansible
 - `results` (String) A list of the dnf transaction results

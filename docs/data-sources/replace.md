@@ -28,7 +28,3 @@ description: |-
 - `before` (String) If specified, only content before this match will be replaced/removed. Can be used in combination with O(after). Uses Python regular expressions; see U(https://docs.python.org/3/library/re.html). Uses DOTALL, which means the V(.) special character I(can match newlines). Does not use MULTILINE, so V(^) and V($) will only match the beginning and end of the file.
 - `encoding` (String) The character encoding for reading and writing the file.
 - `replace` (String) The string to replace regexp matches. May contain backreferences that will get expanded with the regexp capture groups if the regexp matches. If not set, matches are removed entirely. Backreferences can be used ambiguously like V(\\1), or explicitly like V(\\g<1>).
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

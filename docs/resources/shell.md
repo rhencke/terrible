@@ -49,7 +49,6 @@ description: |-
 - `id` (String) Unique task resource ID
 - `msg` (Boolean) changed
 - `rc` (Number) The command return code (0 means success).
-- `result` (String) Full raw JSON result from Ansible
 - `start` (String) The command execution start time.
 - `stderr` (String) The command standard error.
 - `stderr_lines` (String) The command standard error split in lines.

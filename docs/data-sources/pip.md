@@ -39,4 +39,3 @@ description: |-
 ### Read-Only
 
 - `cmd` (String) pip command used by the module
-- `result` (String) Full raw JSON result from Ansible

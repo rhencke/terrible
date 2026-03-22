@@ -55,7 +55,6 @@ description: |-
 - `id` (String) Unique task resource ID
 - `mode` (String) String that represents the octal permissions of the destination directory.
 - `owner` (String) Name of the user that owns the destination directory.
-- `result` (String) Full raw JSON result from Ansible
 - `size` (Number) The size of destination directory in bytes. Does not include the size of files or subdirectories contained within.
 - `state` (String) State of the destination. Effectively always "directory".
 - `uid` (Number) Numerical ID of the user that owns the destination directory.

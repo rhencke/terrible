@@ -6,15 +6,18 @@ any changes on the target host.
 """
 
 import json
+import logging
 
 from tf.iface import ReadDataContext
 from tf.provider import DataSource
 from tf.types import Unknown
 
-from .task_base import _run_module
+from .task_base import _ANSIBLE_INTERNAL, _run_module
+
+log = logging.getLogger(__name__)
 
 # Attributes that belong to the data source framework, not the Ansible module args
-_DS_SKIP_ATTRS = frozenset({"host_id", "result"})
+_DS_SKIP_ATTRS = frozenset({"host_id"})
 
 
 class TerribleTaskDataSource(DataSource):
@@ -70,10 +73,23 @@ class TerribleTaskDataSource(DataSource):
             name: coercers[name](result.get(name)) if name in coercers else result.get(name)
             for name in self.__class__._return_attr_names
         }
+        extra = {
+            k
+            for k in result
+            if k not in self.__class__._return_attr_names
+            and k not in _ANSIBLE_INTERNAL
+            and not k.startswith("_ansible_")
+        }
+        if extra:
+            log.warning(
+                "%s returned undocumented keys not in RETURN schema: %s",
+                self.__class__._module_name,
+                sorted(extra),
+            )
 
         # Unlike resources, ReadDataSource bypasses _encode_state, so NormalizedJson
         # attributes must be pre-encoded as JSON strings before returning.
-        state = {**config, **return_attrs, "result": result}
+        state = {**config, **return_attrs}
         return {
             k: attr_map[k].type.encode(v) if k in attr_map and v not in (None, Unknown) else v for k, v in state.items()
         }

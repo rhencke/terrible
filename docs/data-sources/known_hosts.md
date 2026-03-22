@@ -26,7 +26,3 @@ description: |-
 - `key` (String) The SSH public host key, as a string. Required if O(state=present), optional when O(state=absent), in which case all keys for the host are removed. The key must be in the right format for SSH (see sshd(8), section "SSH_KNOWN_HOSTS FILE FORMAT"). Specifically, the key should not match the format that is found in an SSH pubkey file, but should rather have the hostname prepended to a line that includes the pubkey, the same way that it would appear in the known_hosts file. The value prepended to the line must also match the value of the name parameter. Should be of format C(<hostname[,IP]> ssh-rsa <pubkey>). For custom SSH port, O(key) needs to specify port as well. See example section.
 - `path` (String) The known_hosts file to edit. The known_hosts file will be created if needed. The rest of the path must exist prior to running the module.
 - `state` (String) V(present) to add host keys. V(absent) to remove host keys.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

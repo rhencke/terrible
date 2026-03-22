@@ -27,4 +27,3 @@ description: |-
 ### Read-Only
 
 - `ansible_facts` (String) Facts to add to ansible_facts.
-- `result` (String) Full raw JSON result from Ansible

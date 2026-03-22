@@ -24,5 +24,4 @@ description: |-
 
 - `content` (String) Encoded file content
 - `encoding` (String) Type of encoding used for file
-- `result` (String) Full raw JSON result from Ansible
 - `source` (String) Actual path of file slurped

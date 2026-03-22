@@ -25,7 +25,3 @@ description: |-
 - `fingerprint` (String) The long-form fingerprint of the key being imported. This will be used to verify the specified key.
 - `state` (String) If the key will be imported or removed from the rpm db.
 - `validate_certs` (Boolean) If V(false) and the O(key) is a url starting with V(https), SSL certificates will not be validated. This should only be used on personally controlled sites using self-signed certificates.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

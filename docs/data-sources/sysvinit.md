@@ -32,5 +32,4 @@ description: |-
 
 ### Read-Only
 
-- `result` (String) Full raw JSON result from Ansible
 - `results` (String) results from actions taken

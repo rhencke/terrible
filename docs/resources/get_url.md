@@ -67,7 +67,6 @@ description: |-
 - `mode` (String) permissions of the target
 - `msg` (String) the HTTP message from the request
 - `owner` (String) owner of the file
-- `result` (String) Full raw JSON result from Ansible
 - `secontext` (String) the SELinux security context of the file
 - `size` (Number) size of the target
 - `src` (String) source file used after download

@@ -26,4 +26,3 @@ description: |-
 ### Read-Only
 
 - `ping` (String) Value provided with the O(data) parameter.
-- `result` (String) Full raw JSON result from Ansible

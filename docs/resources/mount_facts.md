@@ -44,4 +44,3 @@ description: |-
 - `ansible_facts` (String) An ansible_facts dictionary containing a dictionary of C(mount_points) and list of C(aggregate_mounts) when enabled. Each key in C(mount_points) is a mount point, and the value contains mount information (similar to C(ansible_facts["mounts"])). Each value also contains the key C(ansible_context), with details about the source and line(s) corresponding to the parsed mount point. When C(aggregate_mounts) are included, the containing dictionaries are the same format as the C(mount_point) values.
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

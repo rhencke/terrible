@@ -37,7 +37,3 @@ description: |-
 - `state` (String) Whether to ensure the job or environment variable is present or absent.
 - `user` (String) The specific user whose crontab should be modified. When unset, this parameter defaults to the current user.
 - `weekday` (String) Day of the week that the job should run (V(SUN-SAT) or V(0-6), V(*), and so on). Cannot be combined with O(special_time).
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

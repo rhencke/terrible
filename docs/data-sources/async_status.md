@@ -29,7 +29,6 @@ description: |-
 - `ansible_job_id` (String) The asynchronous job id
 - `erased` (String) Path to erased job file
 - `finished` (Boolean) Whether the asynchronous job has finished or not
-- `result` (String) Full raw JSON result from Ansible
 - `started` (Boolean) Whether the asynchronous job has started or not
 - `stderr` (String) Any errors returned by async_wrapper
 - `stdout` (String) Any output returned by async_wrapper

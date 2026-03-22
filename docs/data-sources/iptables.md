@@ -67,7 +67,3 @@ description: |-
 - `to_source` (String) This specifies a source address to use with O(ctstate=SNAT). Without this, the source address is never altered.
 - `uid_owner` (String) Specifies the UID or username to use in the match by owner rule. From Ansible 2.6 when the C(!) argument is prepended then the it inverts the rule to apply instead to all users except that one specified.
 - `wait` (String) Wait N seconds for the xtables lock to prevent multiple instances of the program from running concurrently.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

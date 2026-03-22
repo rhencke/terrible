@@ -65,7 +65,6 @@ class TestNormalizedJsonRoundTrip:
             [
                 Attribute("host_id", String(), required=True),
                 Attribute("extra_vars", NormalizedJson(), optional=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         inst = DSClass(_make_provider())
@@ -95,7 +94,6 @@ class TestNormalizedJsonRoundTrip:
         DSClass = _make_ds_class(
             attrs=[
                 Attribute("host_id", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
                 Attribute("stat", NormalizedJson(), computed=True),
             ],
             return_attr_names=["stat"],
@@ -109,8 +107,6 @@ class TestNormalizedJsonRoundTrip:
             state = inst.read(ctx, {"host_id": "host-1"})
 
         assert not diags.has_errors()
-        # Both result and stat must be JSON strings (encoded), not dicts
-        assert isinstance(state["result"], str)
         assert isinstance(state["stat"], str)
         assert json.loads(state["stat"]) == {"exists": True, "path": "/tmp/x"}
 
@@ -120,7 +116,6 @@ class TestNormalizedJsonRoundTrip:
             [
                 Attribute("host_id", String(), required=True),
                 Attribute("path", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         inst = DSClass(_make_provider())
@@ -150,7 +145,6 @@ class TestErrorHandling:
         DSClass = _make_ds_class(
             [
                 Attribute("host_id", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         prov = MagicMock()
@@ -167,7 +161,6 @@ class TestErrorHandling:
         DSClass = _make_ds_class(
             [
                 Attribute("host_id", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         inst = DSClass(_make_provider())
@@ -186,7 +179,6 @@ class TestErrorHandling:
         DSClass = _make_ds_class(
             [
                 Attribute("host_id", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         inst = DSClass(_make_provider())
@@ -214,7 +206,6 @@ class TestSuccessfulRead:
             [
                 Attribute("host_id", String(), required=True),
                 Attribute("ping", String(), computed=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ],
             return_attr_names=["ping"],
         )
@@ -231,12 +222,35 @@ class TestSuccessfulRead:
         assert state["host_id"] == "host-1"
         assert state["ping"] == "pong"
 
+    def test_warns_on_undocumented_keys(self):
+        """Ansible result keys not in RETURN schema trigger a warning."""
+        DSClass = _make_ds_class(
+            [
+                Attribute("host_id", String(), required=True),
+                Attribute("ping", String(), computed=True),
+            ],
+            return_attr_names=["ping"],
+        )
+        inst = DSClass(_make_provider())
+        ctx, diags = _make_ctx()
+
+        with (
+            patch(
+                "terrible_provider.task_datasource._run_module",
+                return_value={"changed": False, "ping": "pong", "undocumented": "val"},
+            ),
+            patch("terrible_provider.task_datasource.log") as mock_log,
+        ):
+            inst.read(ctx, {"host_id": "host-1"})
+
+        mock_log.warning.assert_called_once()
+        assert "undocumented" in str(mock_log.warning.call_args)
+
     def test_runs_in_check_mode(self):
         """_run_module must always be called with check_only=True."""
         DSClass = _make_ds_class(
             [
                 Attribute("host_id", String(), required=True),
-                Attribute("result", NormalizedJson(), computed=True),
             ]
         )
         inst = DSClass(_make_provider())
@@ -249,7 +263,5 @@ class TestSuccessfulRead:
         assert kwargs.get("check_only") is True
 
     def test_get_schema_returns_schema(self):
-        DSClass = _make_ds_class(
-            [Attribute("host_id", String(), required=True), Attribute("result", NormalizedJson(), computed=True)]
-        )
+        DSClass = _make_ds_class([Attribute("host_id", String(), required=True)])
         assert DSClass.get_schema() is DSClass._schema

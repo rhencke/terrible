@@ -48,5 +48,4 @@ description: |-
 - `fp` (String) Fingerprint of the key to import
 - `id` (String) Unique task resource ID
 - `key_id` (String) calculated key id, it should be same as 'id', but can be different
-- `result` (String) Full raw JSON result from Ansible
 - `short_id` (String) calculated short key id

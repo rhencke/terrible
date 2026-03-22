@@ -72,5 +72,4 @@ description: |-
 - `msg` (String) The HTTP message from the request.
 - `path` (String) destination file/path
 - `redirected` (Boolean) Whether the request was redirected.
-- `result` (String) Full raw JSON result from Ansible
 - `status` (Number) The HTTP status code from the request.

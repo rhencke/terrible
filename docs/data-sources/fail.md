@@ -22,7 +22,3 @@ description: |-
 ### Optional
 
 - `msg` (String) The customized message used for failing execution. If omitted, fail will simply bail out with a generic message.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

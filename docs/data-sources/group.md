@@ -30,7 +30,3 @@ description: |-
 - `non_unique` (Boolean) This option allows to change the group ID to a non-unique value. Requires O(gid). Not supported on macOS or BusyBox distributions.
 - `state` (String) Whether the group should be present or not on the remote host.
 - `system` (Boolean) If V(yes), indicates that the group created is a system group.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible
