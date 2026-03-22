@@ -757,12 +757,8 @@ version = "0.8.6"
 source = { editable = "." }
 dependencies = [
     { name = "ansible" },
-    { name = "tf" },
-]
-
-[package.optional-dependencies]
-winrm = [
     { name = "pywinrm" },
+    { name = "tf" },
 ]
 
 [package.dev-dependencies]
@@ -779,10 +775,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ansible", specifier = ">=13.3.0" },
-    { name = "pywinrm", marker = "extra == 'winrm'", specifier = ">=0.4.0" },
+    { name = "pywinrm", specifier = ">=0.4.0" },
     { name = "tf", specifier = ">=1.1.0" },
 ]
-provides-extras = ["winrm"]
 
 [package.metadata.requires-dev]
 dev = [
