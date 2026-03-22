@@ -176,3 +176,4 @@ Runs:
 - Always tag releases with release notes — never leave notes empty.
 - **Never delete tags or releases.** Tags and releases are immutable once pushed. Deleting them triggers GitHub tag-protection rules that permanently block recreation of the same ref name. If a release workflow fails, fix the workflow and cut a new patch version instead.
 - Before the first commit in a session, check if `.git/hooks/pre-commit` exists. If not, run `scripts/install-hooks.sh`.
+- When hitting GitHub API errors, read the docs before guessing at parameters. Cryptic validation errors (e.g. `"Invalid rule 'merge_queue': "`) with no detail often indicate a plan/feature restriction, not a parameter error — confirm eligibility first.
