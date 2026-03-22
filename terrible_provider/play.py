@@ -143,7 +143,9 @@ def _execute_plays(
             for play_dict in play_dicts:
                 play = Play().load(play_dict, variable_manager=vm, loader=loader)
                 rc = tqm.run(play)
-                if rc not in (TaskQueueManager.RUN_OK, TaskQueueManager.RUN_FAILED_HOSTS, TaskQueueManager.RUN_UNREACHABLE_HOSTS, TaskQueueManager.RUN_FAILED_BREAK_PLAY):
+                _ok_rcs = (TaskQueueManager.RUN_OK, TaskQueueManager.RUN_FAILED_HOSTS,
+                           TaskQueueManager.RUN_UNREACHABLE_HOSTS, TaskQueueManager.RUN_FAILED_BREAK_PLAY)
+                if rc not in _ok_rcs:
                     return {"failed": True, "msg": f"Ansible worker error (rc={rc})"}
         except Exception as exc:
             return {"failed": True, "msg": f"Ansible error: {exc}"}
