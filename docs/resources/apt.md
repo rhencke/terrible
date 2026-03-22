@@ -64,6 +64,5 @@ description: |-
 - `cache_updated` (Boolean) if the cache was updated or not
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible
 - `stderr` (String) error output from apt
 - `stdout` (String) output from apt

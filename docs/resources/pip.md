@@ -52,4 +52,3 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `cmd` (String) pip command used by the module
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

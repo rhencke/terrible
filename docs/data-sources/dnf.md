@@ -52,7 +52,3 @@ description: |-
 - `update_only` (Boolean) When using latest, only update installed packages. Do not install packages. Has an effect only if O(state=present) or O(state=latest).
 - `use_backend` (String) Backend module to use.
 - `validate_certs` (Boolean) This only applies if using a https url as the source of the rpm. For example, for localinstall. If set to V(false), the SSL certificates will not be validated. This should only set to V(false) used on personally controlled sites using self-signed certificates as it avoids verifying the source site.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

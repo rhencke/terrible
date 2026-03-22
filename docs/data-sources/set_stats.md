@@ -24,7 +24,3 @@ description: |-
 
 - `aggregate` (Boolean) Whether the provided value is aggregated to the existing stat V(true) or will replace it V(false).
 - `per_host` (Boolean) Whether the stats are per host or for all hosts in the run.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

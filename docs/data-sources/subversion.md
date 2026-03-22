@@ -34,7 +34,3 @@ description: |-
 - `update` (Boolean) If V(false), do not retrieve new revisions from the origin repository.
 - `username` (String) C(--username) parameter passed to svn.
 - `validate_certs` (Boolean) If V(false), passes the C(--trust-server-cert) flag to svn. If V(true), does not pass the flag.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

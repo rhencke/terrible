@@ -29,7 +29,6 @@ description: |-
 ### Read-Only
 
 - `delta` (String) Time paused in seconds
-- `result` (String) Full raw JSON result from Ansible
 - `start` (String) Time when started pausing
 - `stdout` (String) Output of pause module
 - `stop` (String) Time when ended pausing

@@ -41,4 +41,3 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `elapsed` (Number) The number of seconds that elapsed waiting for the connection to appear.
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

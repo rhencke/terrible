@@ -43,5 +43,4 @@ description: |-
 
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible
 - `stat` (String) Dictionary containing all the stat data, some platforms might add additional fields.

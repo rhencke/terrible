@@ -51,4 +51,3 @@ description: |-
 - `id` (String) Unique task resource ID
 - `match_groupdict` (String) Dictionary containing all the named subgroups of the match, keyed by the subgroup name, as returned by U(https://docs.python.org/3/library/re.html#re.Match.groupdict)
 - `match_groups` (String) Tuple containing all the subgroups of the match as returned by U(https://docs.python.org/3/library/re.html#re.Match.groups)
-- `result` (String) Full raw JSON result from Ansible

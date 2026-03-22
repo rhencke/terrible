@@ -36,4 +36,3 @@ description: |-
 
 - `ansible_facts` (String) Variables that were included and their values
 - `ansible_included_var_files` (String) A list of files that were successfully included
-- `result` (String) Full raw JSON result from Ansible

@@ -38,4 +38,3 @@ description: |-
 - `ansible_facts` (String) Facts to add to ansible_facts about the services on the system
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

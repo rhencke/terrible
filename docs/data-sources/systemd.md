@@ -33,5 +33,4 @@ description: |-
 
 ### Read-Only
 
-- `result` (String) Full raw JSON result from Ansible
 - `status` (String) A dictionary with the key=value pairs returned from C(systemctl show).

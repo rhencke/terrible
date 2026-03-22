@@ -41,5 +41,4 @@ description: |-
 - `argument_spec_data` (String) A dict of the data from the 'argument_spec' arg.
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible
 - `validate_args_context` (String) A dict of info about where validate_args_spec was used

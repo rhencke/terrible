@@ -32,7 +32,6 @@ description: |-
 - `md5sum` (String) MD5 checksum of the rendered file
 - `mode` (String) Unix permissions of the file in octal representation as a string
 - `owner` (String) User name of owner
-- `result` (String) Full raw JSON result from Ansible
 - `size` (Number) Size of the rendered file in bytes
 - `src` (String) Source file used for the copy on the target machine.
 - `uid` (Number) Numeric id representing the file owner

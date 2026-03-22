@@ -60,5 +60,4 @@ description: |-
 - `files` (String) All matches found with the specified criteria (see stat module for full output of each dictionary)
 - `id` (String) Unique task resource ID
 - `matched` (Number) Number of matches
-- `result` (String) Full raw JSON result from Ansible
 - `skipped_paths` (String) skipped paths and reasons they were skipped

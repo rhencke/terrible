@@ -23,7 +23,3 @@ description: |-
 ### Optional
 
 - `use` (String) Which strategy to use to update the hostname. If not set we try to autodetect, but this can be problematic, particularly with containers as they can present misleading information. Note that V(systemd) should be specified for RHEL/EL/CentOS 7+. Older distributions should use V(redhat).
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

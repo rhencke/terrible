@@ -53,7 +53,6 @@ _FRAMEWORK_ATTRS = [
         required=True,
         requires_replace=True,
     ),
-    Attribute("result", NormalizedJson(), description="Full raw JSON result from Ansible", computed=True),
     Attribute("changed", Bool(), description="Whether the task reported a change", computed=True),
     Attribute(
         "triggers",
@@ -125,7 +124,7 @@ _FRAMEWORK_ATTRS = [
 
 _FRAMEWORK_NAMES = {a.name for a in _FRAMEWORK_ATTRS}
 
-# Data source framework attributes — no id/triggers/changed; just host_id and result
+# Data source framework attributes — no id/triggers/changed; just host_id
 _DS_FRAMEWORK_ATTRS = [
     Attribute(
         "host_id",
@@ -133,7 +132,6 @@ _DS_FRAMEWORK_ATTRS = [
         description="ID of the `terrible_host` to run this data source against",
         required=True,
     ),
-    Attribute("result", NormalizedJson(), description="Full raw JSON result from Ansible", computed=True),
 ]
 _DS_FRAMEWORK_NAMES = {a.name for a in _DS_FRAMEWORK_ATTRS}
 

@@ -22,7 +22,3 @@ description: |-
 ### Optional
 
 - `free-form` (String) The name of the imported playbook is specified directly without any other option.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

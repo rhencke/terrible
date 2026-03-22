@@ -28,5 +28,4 @@ description: |-
 
 - `argument_errors` (String) A list of arg validation errors.
 - `argument_spec_data` (String) A dict of the data from the 'argument_spec' arg.
-- `result` (String) Full raw JSON result from Ansible
 - `validate_args_context` (String) A dict of info about where validate_args_spec was used

@@ -34,7 +34,3 @@ description: |-
 - `marker_end` (String) This will be inserted at C({mark}) in the closing ansible block O(marker).
 - `prepend_newline` (Boolean) Prepend a blank line to the inserted block, if this does not appear at the beginning of the file. Note that this attribute is not considered when C(state) is set to C(absent)
 - `state` (String) Whether the block should be there or not.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

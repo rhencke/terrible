@@ -39,4 +39,3 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
 - `ping` (String) Value provided with the O(data) parameter.
-- `result` (String) Full raw JSON result from Ansible

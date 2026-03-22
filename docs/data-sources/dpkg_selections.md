@@ -20,7 +20,3 @@ description: |-
 - `host_id` (String) ID of the `terrible_host` to run this data source against
 - `name` (String) Name of the package.
 - `selection` (String) The selection state to set the package to.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

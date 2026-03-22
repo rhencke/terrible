@@ -68,7 +68,7 @@ class TestBuildArgsStr:
         assert json.loads(s) == {"path": "/tmp/f"}
 
     def test_skips_framework_attrs(self):
-        s = _build_args_str({"id": "1", "host_id": "2", "result": {}, "changed": True, "triggers": None})
+        s = _build_args_str({"id": "1", "host_id": "2", "changed": True, "triggers": None})
         assert s is None
 
     def test_skips_new_framework_attrs(self):
@@ -138,13 +138,12 @@ class TestPlan:
         inst = klass(_provider())
         result = inst.plan(_ctx(PlanContext), None, {"host_id": "h1"})
         assert result["rc"] is Unknown
-        assert result["result"] is Unknown
         assert result["changed"] is Unknown
 
     def test_existing_no_change_returns_current(self):
         inst = _make_class()(_provider())
-        current = {"id": "x", "host_id": "h1", "result": {}, "changed": False}
-        planned = {"host_id": "h1", "result": {}, "changed": False}
+        current = {"id": "x", "host_id": "h1", "changed": False}
+        planned = {"host_id": "h1", "changed": False}
         result = inst.plan(_ctx(PlanContext), current, planned)
         assert result["id"] == "x"
 
@@ -154,8 +153,8 @@ class TestPlan:
             returns={"rc": {"type": "int"}},
         )
         inst = klass(_provider())
-        current = {"id": "x", "host_id": "h1", "path": "/old", "rc": 0, "result": {}, "changed": False}
-        planned = {"host_id": "h1", "path": "/new", "result": {}, "changed": False}
+        current = {"id": "x", "host_id": "h1", "path": "/old", "rc": 0, "changed": False}
+        planned = {"host_id": "h1", "path": "/new", "changed": False}
         result = inst.plan(_ctx(PlanContext), current, planned)
         assert result["rc"] is Unknown
 
@@ -198,6 +197,19 @@ class TestCRUD:
         with patch("terrible_provider.task_base._run_module", return_value=self._RESULT):
             state = inst.create(_ctx(CreateContext), {"host_id": "h1"})
         assert "id" in state
+
+    def test_create_warns_on_undocumented_keys(self):
+        klass = _make_class(returns={"rc": {"type": "int"}})
+        prov = _provider(state={"h1": _host()})
+        inst = klass(prov)
+        result = {"changed": False, "rc": 0, "undocumented_key": "surprise"}
+        with (
+            patch("terrible_provider.task_base._run_module", return_value=result),
+            patch("terrible_provider.task_base.log") as mock_log,
+        ):
+            inst.create(_ctx(CreateContext), {"host_id": "h1"})
+        mock_log.warning.assert_called_once()
+        assert "undocumented_key" in str(mock_log.warning.call_args)
 
     def test_create_host_not_found_adds_error(self):
         klass = _make_class()
@@ -244,7 +256,7 @@ class TestCRUD:
 class TestRead:
     def test_read_no_check_mode_returns_current(self):
         klass = _make_class(check_mode="none")
-        current = {"id": "rid", "host_id": "h1", "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "changed": False}
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         result = inst.read(_ctx(ReadContext), current)
@@ -252,7 +264,7 @@ class TestRead:
 
     def test_read_check_mode_no_drift_returns_current(self):
         klass = _make_class(check_mode="full")
-        current = {"id": "rid", "host_id": "h1", "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "changed": False}
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         with patch("terrible_provider.task_base._run_module", return_value={"changed": False}):
@@ -261,18 +273,17 @@ class TestRead:
 
     def test_read_check_mode_drift_clears_outputs(self):
         klass = _make_class(returns={"rc": {"type": "int"}}, check_mode="full")
-        current = {"id": "rid", "host_id": "h1", "rc": 0, "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "rc": 0, "changed": False}
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         with patch("terrible_provider.task_base._run_module", return_value={"changed": True}):
             result = inst.read(_ctx(ReadContext), current)
         assert result["rc"] is None
-        assert result["result"] is None
         assert result["changed"] is None
 
     def test_read_check_mode_failed_returns_current_with_warning(self):
         klass = _make_class(check_mode="full")
-        current = {"id": "rid", "host_id": "h1", "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "h1", "changed": False}
         prov = _provider(state={"h1": _host()})
         inst = klass(prov)
         with patch("terrible_provider.task_base._run_module", return_value={"failed": True, "msg": "oops"}):
@@ -281,7 +292,7 @@ class TestRead:
 
     def test_read_check_mode_host_not_in_state_returns_current(self):
         klass = _make_class(check_mode="full")
-        current = {"id": "rid", "host_id": "missing", "result": {}, "changed": False}
+        current = {"id": "rid", "host_id": "missing", "changed": False}
         prov = _provider()  # host NOT in state
         inst = klass(prov)
         result = inst.read(_ctx(ReadContext), current)

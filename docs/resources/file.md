@@ -48,4 +48,3 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `dest` (String) Destination file/path, equal to the value passed to O(path).
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

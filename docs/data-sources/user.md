@@ -64,7 +64,6 @@ description: |-
 
 ### Read-Only
 
-- `result` (String) Full raw JSON result from Ansible
 - `ssh_fingerprint` (String) Fingerprint of generated SSH key.
 - `ssh_public_key` (String) Generated SSH public key file.
 - `stderr` (String) Standard error from running commands.

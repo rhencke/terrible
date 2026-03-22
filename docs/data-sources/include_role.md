@@ -30,7 +30,3 @@ description: |-
 - `rolespec_validate` (Boolean) Perform role argument spec validation if an argument spec is defined.
 - `tasks_from` (String) File to load from a role's C(tasks/) directory.
 - `vars_from` (String) File to load from a role's C(vars/) directory.
-
-### Read-Only
-
-- `result` (String) Full raw JSON result from Ansible

@@ -51,6 +51,5 @@ description: |-
 
 - `cache_update_time` (Number) time of the last cache update (0 if unknown)
 - `cache_updated` (Boolean) if the cache was updated or not
-- `result` (String) Full raw JSON result from Ansible
 - `stderr` (String) error output from apt
 - `stdout` (String) output from apt

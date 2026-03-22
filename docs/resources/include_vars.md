@@ -49,4 +49,3 @@ description: |-
 - `ansible_included_var_files` (String) A list of files that were successfully included
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible

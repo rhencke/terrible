@@ -34,6 +34,5 @@ description: |-
 
 ### Read-Only
 
-- `result` (String) Full raw JSON result from Ansible
 - `sources_added` (String) List of sources added
 - `sources_removed` (String) List of sources removed

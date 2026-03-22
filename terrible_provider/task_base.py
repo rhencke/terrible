@@ -1,12 +1,15 @@
 """Base class for dynamically-generated Ansible module resources."""
 
 import json
+import logging
 import signal as _signal
 import threading
 import uuid
 
 from tf.iface import CreateContext, DeleteContext, ImportContext, PlanContext, ReadContext, Resource, UpdateContext
 from tf.types import Unknown
+
+log = logging.getLogger(__name__)
 
 _MODULE_TIMEOUT = 300  # seconds before an Ansible run is considered hung
 
@@ -265,7 +268,6 @@ _SKIP_ATTRS = frozenset(
     {
         "id",
         "host_id",
-        "result",
         "changed",
         "triggers",
         "timeout",
@@ -278,6 +280,22 @@ _SKIP_ATTRS = frozenset(
         "async_seconds",
         "poll_interval",
         "delegate_to_id",
+    }
+)
+
+# Ansible bookkeeping keys that are never part of the documented RETURN schema
+_ANSIBLE_INTERNAL = frozenset(
+    {
+        "changed",
+        "failed",
+        "msg",
+        "unreachable",
+        "skipped",
+        "warnings",
+        "deprecations",
+        "invocation",
+        "exception",
+        "ansible_facts",
     }
 )
 
@@ -318,13 +336,13 @@ class TerribleTaskBase(Resource):
         unknown_outputs = {name: Unknown for name in self.__class__._return_attr_names}
         if current is None:
             # New resource — outputs unknown until creation
-            return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
+            return {**planned, **unknown_outputs, "changed": Unknown}
 
         # Existing resource — check whether any input attribute changed
-        computed = self.__class__._return_attr_names | {"id", "result", "changed"}
+        computed = self.__class__._return_attr_names | {"id", "changed"}
         inputs_changed = any(v is not Unknown and current.get(k) != v for k, v in planned.items() if k not in computed)
         if inputs_changed:
-            return {**planned, **unknown_outputs, "result": Unknown, "changed": Unknown}
+            return {**planned, **unknown_outputs, "changed": Unknown}
 
         # Nothing changed — stable no-op plan
         return dict(current)
@@ -338,16 +356,16 @@ class TerribleTaskBase(Resource):
             )
         return h
 
-    def _execute(self, diags, planned: dict) -> tuple[dict, bool, dict]:
+    def _execute(self, diags, planned: dict) -> tuple[bool, dict]:
         host = self._resolve_host(planned["host_id"], diags)
         if host is None:
-            return {}, False, {}
+            return False, {}
 
         delegate_host = None
         if planned.get("delegate_to_id"):
             delegate_host = self._resolve_host(planned["delegate_to_id"], diags)
             if delegate_host is None:
-                return {}, False, {}
+                return False, {}
 
         args_str = _build_args_str(planned)
         result = _run_module(
@@ -374,13 +392,25 @@ class TerribleTaskBase(Resource):
             name: coercers[name](result.get(name)) if name in coercers else result.get(name)
             for name in self.__class__._return_attr_names
         }
-        return result, changed, return_attrs
+        extra = {
+            k
+            for k in result
+            if k not in self.__class__._return_attr_names
+            and k not in _ANSIBLE_INTERNAL
+            and not k.startswith("_ansible_")
+        }
+        if extra:
+            log.warning(
+                "%s returned undocumented keys not in RETURN schema: %s",
+                self.__class__._module_name,
+                sorted(extra),
+            )
+        return changed, return_attrs
 
     def create(self, ctx: CreateContext, planned: dict) -> dict | None:
-        result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
+        changed, return_attrs = self._execute(ctx.diagnostics, planned)
         new_id = uuid.uuid4().hex
-        state = {**planned, **return_attrs, "id": new_id, "result": result, "changed": changed}
-        return state
+        return {**planned, **return_attrs, "id": new_id, "changed": changed}
 
     def _execute_check(self, diags, current: dict) -> dict | None:
         """Run module in check+diff mode against stored state. Returns raw result or None on host error."""
@@ -422,17 +452,14 @@ class TerribleTaskBase(Resource):
 
         # Drift detected — clear computed outputs so Terraform plans an update()
         drift_state = dict(current)
-        drift_state["result"] = None
         drift_state["changed"] = None
         for name in self.__class__._return_attr_names:
             drift_state[name] = None
         return drift_state
 
     def update(self, ctx: UpdateContext, current: dict, planned: dict) -> dict | None:
-        result, changed, return_attrs = self._execute(ctx.diagnostics, planned)
-        rid = current["id"]
-        state = {**planned, **return_attrs, "id": rid, "result": result, "changed": changed}
-        return state
+        changed, return_attrs = self._execute(ctx.diagnostics, planned)
+        return {**planned, **return_attrs, "id": current["id"], "changed": changed}
 
     def delete(self, ctx: DeleteContext, current: dict):
         pass

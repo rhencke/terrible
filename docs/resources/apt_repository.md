@@ -47,6 +47,5 @@ description: |-
 
 - `changed` (Boolean) Whether the task reported a change
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible
 - `sources_added` (String) List of sources added
 - `sources_removed` (String) List of sources removed

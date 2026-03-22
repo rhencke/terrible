@@ -112,7 +112,7 @@ class TestBuildSchema:
     def test_framework_attrs_always_present(self):
         schema, _ = _build_schema({}, {})
         names = {a.name for a in schema.attributes}
-        assert {"id", "host_id", "result", "changed", "triggers"} <= names
+        assert {"id", "host_id", "changed", "triggers"} <= names
 
     def test_framework_names_excluded_from_options(self):
         # If a module happens to declare 'id' or 'changed' as an option, skip it
@@ -149,11 +149,11 @@ class TestBuildSchema:
 
 
 class TestBuildDatasourceSchema:
-    def test_has_host_id_and_result(self):
+    def test_has_host_id(self):
         schema, _ = _build_datasource_schema({}, {})
         names = {a.name for a in schema.attributes}
         assert "host_id" in names
-        assert "result" in names
+        assert "result" not in names
 
     def test_no_id_triggers_changed(self):
         schema, _ = _build_datasource_schema({}, {})
@@ -326,10 +326,10 @@ class TestBuildDatasourceSchemaExtraBranches:
         assert names.count("host_id") == 1
 
     def test_framework_name_in_returns_is_skipped(self):
-        # "result" is a framework name; it must not be added again
-        schema, return_names = _build_datasource_schema({}, {"result": {"type": "dict"}, "rc": {"type": "int"}})
+        # "host_id" is a framework name; if a module returns it, it must not be added again
+        schema, return_names = _build_datasource_schema({}, {"host_id": {"type": "str"}, "rc": {"type": "int"}})
         names = [a.name for a in schema.attributes]
-        assert names.count("result") == 1
+        assert names.count("host_id") == 1
         assert "rc" in return_names
 
 

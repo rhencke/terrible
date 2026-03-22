@@ -42,7 +42,6 @@ description: |-
 - `changed` (Boolean) Whether the task reported a change
 - `delta` (String) Time paused in seconds
 - `id` (String) Unique task resource ID
-- `result` (String) Full raw JSON result from Ansible
 - `start` (String) Time when started pausing
 - `stdout` (String) Output of pause module
 - `stop` (String) Time when ended pausing
