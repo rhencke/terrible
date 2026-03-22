@@ -231,7 +231,12 @@ jobs:
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: |
           VERSION="${TAG_NAME#v}"
-          export TERRIBLE_PROVIDER_BIN="/tmp/release-bin/terraform-provider-terrible_v${VERSION}"
+          # install_provider derives zip names from the binary filename, so it must
+          # be named "terraform-provider-terrible" (no version suffix) for tofu init
+          # to find it in the filesystem mirror.
+          CLEAN_BIN="/tmp/release-bin/terraform-provider-terrible"
+          ln -sf "/tmp/release-bin/terraform-provider-terrible_v${VERSION}" "${CLEAN_BIN}"
+          export TERRIBLE_PROVIDER_BIN="${CLEAN_BIN}"
           make integration-test
 
   # ── Stage 4: publish (only if ALL binary validations pass) ────────────────
@@ -325,7 +330,9 @@ jobs:
       - name: Run integration tests against registry binary
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: |
-          export TERRIBLE_PROVIDER_BIN="${REGISTRY_BIN}"
+          CLEAN_BIN="/tmp/registry-bin/terraform-provider-terrible"
+          ln -sf "${REGISTRY_BIN}" "${CLEAN_BIN}"
+          export TERRIBLE_PROVIDER_BIN="${CLEAN_BIN}"
           make integration-test
 
   # ── Cleanup: delete draft if binary validation failed ─────────────────────
