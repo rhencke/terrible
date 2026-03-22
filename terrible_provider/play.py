@@ -142,7 +142,9 @@ def _execute_plays(
             tqm._callback_plugins.append(cb)
             for play_dict in play_dicts:
                 play = Play().load(play_dict, variable_manager=vm, loader=loader)
-                tqm.run(play)
+                rc = tqm.run(play)
+                if rc not in (TaskQueueManager.RUN_OK, TaskQueueManager.RUN_FAILED_HOSTS, TaskQueueManager.RUN_UNREACHABLE_HOSTS, TaskQueueManager.RUN_FAILED_BREAK_PLAY):
+                    return {"failed": True, "msg": f"Ansible worker error (rc={rc})"}
         except Exception as exc:
             return {"failed": True, "msg": f"Ansible error: {exc}"}
         finally:

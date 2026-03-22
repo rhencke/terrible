@@ -48,8 +48,14 @@ def _host():
 
 def _make_mock_tqm(result):
     """TQM mock that injects *result* via v2_runner_on_ok into every _MultiCB callback."""
+    from ansible.executor.task_queue_manager import TaskQueueManager as _RealTQM
 
     class _MockTQM:
+        RUN_OK = _RealTQM.RUN_OK
+        RUN_FAILED_HOSTS = _RealTQM.RUN_FAILED_HOSTS
+        RUN_UNREACHABLE_HOSTS = _RealTQM.RUN_UNREACHABLE_HOSTS
+        RUN_FAILED_BREAK_PLAY = _RealTQM.RUN_FAILED_BREAK_PLAY
+
         def __init__(self, **kw):
             self._callback_plugins = []
 
@@ -65,6 +71,7 @@ def _make_mock_tqm(result):
                         cb.v2_runner_on_failed(r)
                     else:
                         cb.v2_runner_on_ok(r)
+            return self.RUN_OK
 
         def cleanup(self):
             pass
@@ -187,10 +194,46 @@ class TestExecutePlays:
         assert result["failed"] is True
         assert "exploded" in result["msg"]
 
+    def test_worker_error_rc_returns_failed(self):
+        from ansible.executor.task_queue_manager import TaskQueueManager as _RealTQM
+
+        class _ErrRCTQM:
+            RUN_OK = _RealTQM.RUN_OK
+            RUN_FAILED_HOSTS = _RealTQM.RUN_FAILED_HOSTS
+            RUN_UNREACHABLE_HOSTS = _RealTQM.RUN_UNREACHABLE_HOSTS
+            RUN_FAILED_BREAK_PLAY = _RealTQM.RUN_FAILED_BREAK_PLAY
+
+            def __init__(self, **kw):
+                self._callback_plugins = []
+
+            def load_callbacks(self):
+                pass
+
+            def run(self, play):
+                return _RealTQM.RUN_ERROR
+
+            def cleanup(self):
+                pass
+
+        with patch("ansible.executor.task_queue_manager.TaskQueueManager", _ErrRCTQM):
+            result = _execute_plays(
+                self._HOST,
+                [{"name": "p", "hosts": "target", "gather_facts": "no", "tasks": []}],
+            )
+        assert result["failed"] is True
+        assert "worker error" in result["msg"]
+
     def test_extra_vars_set_on_variable_manager(self):
+        from ansible.executor.task_queue_manager import TaskQueueManager as _RealTQM
+
         captured = {}
 
         class _CaptureTQM:
+            RUN_OK = _RealTQM.RUN_OK
+            RUN_FAILED_HOSTS = _RealTQM.RUN_FAILED_HOSTS
+            RUN_UNREACHABLE_HOSTS = _RealTQM.RUN_UNREACHABLE_HOSTS
+            RUN_FAILED_BREAK_PLAY = _RealTQM.RUN_FAILED_BREAK_PLAY
+
             def __init__(self, variable_manager, **kw):
                 captured["extra_vars"] = getattr(variable_manager, "_extra_vars", None)
                 self._callback_plugins = []
@@ -204,6 +247,7 @@ class TestExecutePlays:
                 for cb in self._callback_plugins:
                     if hasattr(cb, "results"):
                         cb.v2_runner_on_ok(r)
+                return self.RUN_OK
 
             def cleanup(self):
                 pass
@@ -214,10 +258,16 @@ class TestExecutePlays:
 
     def test_timeout_and_tags_set_in_cliargs(self):
         from ansible import context as _ctx
+        from ansible.executor.task_queue_manager import TaskQueueManager as _RealTQM
 
         cliargs_seen = {}
 
         class _CaptureTQM:
+            RUN_OK = _RealTQM.RUN_OK
+            RUN_FAILED_HOSTS = _RealTQM.RUN_FAILED_HOSTS
+            RUN_UNREACHABLE_HOSTS = _RealTQM.RUN_UNREACHABLE_HOSTS
+            RUN_FAILED_BREAK_PLAY = _RealTQM.RUN_FAILED_BREAK_PLAY
+
             def __init__(self, **kw):
                 self._callback_plugins = []
                 cliargs_seen["timeout"] = dict(_ctx.CLIARGS).get("timeout")
@@ -229,7 +279,7 @@ class TestExecutePlays:
                 pass
 
             def run(self, play):
-                pass
+                return self.RUN_OK
 
             def cleanup(self):
                 pass
@@ -303,7 +353,14 @@ class TestRunPlaybook:
         pb.write_text("- name: p\n  hosts: webservers\n  gather_facts: no\n  tasks: []\n")
         captured = {}
 
+        from ansible.executor.task_queue_manager import TaskQueueManager as _RealTQM
+
         class _CaptureTQM:
+            RUN_OK = _RealTQM.RUN_OK
+            RUN_FAILED_HOSTS = _RealTQM.RUN_FAILED_HOSTS
+            RUN_UNREACHABLE_HOSTS = _RealTQM.RUN_UNREACHABLE_HOSTS
+            RUN_FAILED_BREAK_PLAY = _RealTQM.RUN_FAILED_BREAK_PLAY
+
             def __init__(self, **kw):
                 self._callback_plugins = []
 
@@ -312,6 +369,7 @@ class TestRunPlaybook:
 
             def run(self, play):
                 captured["hosts"] = play._ds.get("hosts")
+                return self.RUN_OK
 
             def cleanup(self):
                 pass
