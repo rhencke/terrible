@@ -91,21 +91,38 @@ if [[ -z "${RUN_ID}" ]]; then
 fi
 
 echo "Watching run ${RUN_ID}..." >&2
+echo "  https://github.com/rhencke/terraform-provider-terrible/actions/runs/${RUN_ID}" >&2
+echo "" >&2
 
-# Print job status updates as they complete
-gh run watch "${RUN_ID}" --exit-status &
-WATCH_PID=$!
+# Poll until the run completes, printing timestamped per-job progress.
+STATUS=1
+while true; do
+    RUN_JSON="$(gh run view "${RUN_ID}" --json status,conclusion,jobs 2>/dev/null)"
+    RUN_STATUS="$(echo "${RUN_JSON}" | jq -r '.status')"
+    RUN_CONCLUSION="$(echo "${RUN_JSON}" | jq -r '.conclusion // ""')"
 
-while kill -0 $WATCH_PID 2>/dev/null; do
-    gh run view "${RUN_ID}" --json jobs \
-        --jq '.jobs[] | "\(.conclusion // "running") \(.name)"' 2>/dev/null \
-        | sort -u >&2
-    echo "---" >&2
-    sleep 15
+    TIMESTAMP="$(date '+%H:%M:%S')"
+    echo "[${TIMESTAMP}] run: ${RUN_STATUS}${RUN_CONCLUSION:+ (${RUN_CONCLUSION})}" >&2
+
+    # For each job, show its conclusion or the currently-running step
+    echo "${RUN_JSON}" | jq -r '
+        .jobs[] |
+        . as $job |
+        ($job.conclusion // (
+            ($job.steps // [] | map(select(.status == "in_progress")) | last // ($job.steps // [] | last) | .name // "starting")
+        )) as $detail |
+        "  \($job.name): \($detail)"
+    ' 2>/dev/null >&2
+
+    echo "" >&2
+
+    if [[ "${RUN_STATUS}" == "completed" ]]; then
+        [[ "${RUN_CONCLUSION}" == "success" ]] && STATUS=0 || STATUS=1
+        break
+    fi
+
+    sleep 20
 done
-
-wait $WATCH_PID
-STATUS=$?
 
 if [[ $STATUS -eq 0 ]]; then
     echo ""
