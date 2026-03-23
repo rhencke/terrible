@@ -544,9 +544,7 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
     seen_fqcns: set[str] = set()
 
     try:
-        import itertools
-
-        for path in itertools.chain(module_loader.all(path_only=True), _iter_collection_module_paths()):
+        for path in module_loader.all(path_only=True):
             if not path or not path.endswith(".py") or os.path.basename(path).startswith("_"):
                 continue
 
@@ -579,20 +577,6 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
                     log.debug("Registered data source type: %s", fqcn)
             except Exception as exc:
                 log.debug("Failed to build class for %s: %s", fqcn, exc)
-
-        # Warn about installed collections that contributed no discoverable modules.
-        seen_collections = {
-            ".".join(fqcn.split(".")[:2]) for fqcn in seen_fqcns if not fqcn.startswith("ansible.builtin.")
-        }
-        try:
-            for coll in sorted(_get_installed_collections() - seen_collections):
-                log.warning(
-                    "Installed collection '%s' contributed no discoverable modules; "
-                    "check that it is correctly installed",
-                    coll,
-                )
-        except Exception as exc:
-            log.debug("Collection presence check failed: %s", exc)
 
         log.info("Discovered %d Ansible task types (%d data sources)", len(resources), len(datasources))
 

@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from tf.types import Bool, NormalizedJson, Number
 
 from terrible_provider.discovery import (
@@ -438,11 +437,6 @@ class TestCacheHelpers:
 
 
 class TestDiscoverTaskResources:
-    @pytest.fixture(autouse=True)
-    def _no_collection_walk(self):
-        with patch("terrible_provider.discovery._iter_collection_module_paths", return_value=iter([])):
-            yield
-
     def test_cache_hit_returns_cached(self):
         fake_class = MagicMock()
         db_mock = MagicMock()
@@ -644,53 +638,6 @@ class TestDiscoverTaskResources:
             patch("terrible_provider.discovery._load_cached", return_value=None),
             patch("terrible_provider.discovery._save_cache"),
             patch.object(loader.module_loader, "all", return_value=[]),
-        ):
-            discover_task_resources()  # Must not raise
-
-    def test_installed_collection_with_no_modules_warns(self, tmp_path, caplog):
-        import logging
-
-        import ansible.plugins.loader as loader
-
-        with (
-            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
-            patch.object(loader.module_loader, "all", return_value=[]),
-            patch(
-                "terrible_provider.discovery._get_installed_collections",
-                return_value={"community.general", "community.crypto"},
-            ),
-            caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"),
-        ):
-            discover_task_resources()
-        warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-        assert any("community.general" in m for m in warned)
-        assert any("community.crypto" in m for m in warned)
-
-    def test_installed_collection_with_modules_no_warn(self, tmp_path, caplog):
-        mod_dir = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
-        mod_dir.mkdir(parents=True)
-        (mod_dir / "ping.py").write_text(_FAKE_MODULE_NONE)
-        import logging
-
-        import ansible.plugins.loader as loader
-
-        with (
-            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
-            patch.object(loader.module_loader, "all", return_value=[str(mod_dir / "ping.py")]),
-            patch("terrible_provider.discovery._get_installed_collections", return_value={"community.general"}),
-            caplog.at_level(logging.WARNING, logger="terrible_provider.discovery"),
-        ):
-            discover_task_resources()
-        warned = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-        assert not any("community.general" in m for m in warned)
-
-    def test_collection_presence_check_exception_handled(self, caplog):
-        import ansible.plugins.loader as loader
-
-        with (
-            patch("terrible_provider.discovery._open_cache", side_effect=Exception("no cache")),
-            patch.object(loader.module_loader, "all", return_value=[]),
-            patch("terrible_provider.discovery._get_installed_collections", side_effect=RuntimeError("boom")),
         ):
             discover_task_resources()  # Must not raise
 
