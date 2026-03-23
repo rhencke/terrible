@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from tf.types import Bool, NormalizedJson, Number
 
 from terrible_provider.discovery import (
@@ -15,6 +16,7 @@ from terrible_provider.discovery import (
     _check_mode_support,
     _fqcn_for_path,
     _get_installed_collections,
+    _iter_collection_module_paths,
     _load_cached,
     _open_cache,
     _parse_yaml_block,
@@ -436,6 +438,11 @@ class TestCacheHelpers:
 
 
 class TestDiscoverTaskResources:
+    @pytest.fixture(autouse=True)
+    def _no_collection_walk(self):
+        with patch("terrible_provider.discovery._iter_collection_module_paths", return_value=iter([])):
+            yield
+
     def test_cache_hit_returns_cached(self):
         fake_class = MagicMock()
         db_mock = MagicMock()
@@ -757,6 +764,60 @@ class TestGetInstalledCollections:
         monkeypatch.setitem(sys.modules, "ansible.constants", None)
         result = _get_installed_collections()
         assert result == set()
+
+
+# ---------------------------------------------------------------------------
+# _iter_collection_module_paths
+# ---------------------------------------------------------------------------
+
+
+class TestIterCollectionModulePaths:
+    def test_yields_py_files_in_modules_dir(self, tmp_path):
+        mod = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
+        mod.mkdir(parents=True)
+        (mod / "mymod.py").write_text("")
+        (mod / "_private.py").write_text("")
+        (mod / "README.md").write_text("")
+        result = list(_iter_collection_module_paths([str(tmp_path)]))
+        assert len(result) == 1
+        assert result[0].endswith("mymod.py")
+
+    def test_deduplicates_across_paths(self, tmp_path):
+        mod = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
+        mod.mkdir(parents=True)
+        (mod / "mymod.py").write_text("")
+        # Same path listed twice — should yield once.
+        result = list(_iter_collection_module_paths([str(tmp_path), str(tmp_path)]))
+        assert len(result) == 1
+
+    def test_nonexistent_path_skipped(self, tmp_path):
+        result = list(_iter_collection_module_paths([str(tmp_path / "nonexistent")]))
+        assert result == []
+
+    def test_oserror_handled(self, tmp_path):
+        ac = tmp_path / "ansible_collections"
+        ac.mkdir()
+        with patch("pathlib.Path.glob", side_effect=OSError("perm denied")):
+            result = list(_iter_collection_module_paths([str(tmp_path)]))
+        assert result == []
+
+    def test_uses_ansible_constants_and_site_packages_when_no_paths_given(self, tmp_path, monkeypatch):
+        mod = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
+        mod.mkdir(parents=True)
+        (mod / "mymod.py").write_text("")
+        monkeypatch.setattr("site.getsitepackages", lambda: [])
+        with patch("ansible.constants.COLLECTIONS_PATHS", [str(tmp_path)]):
+            result = list(_iter_collection_module_paths())
+        assert any("mymod.py" in p for p in result)
+
+    def test_ansible_import_error_falls_back_to_site_packages(self, tmp_path, monkeypatch):
+        mod = tmp_path / "ansible_collections" / "community" / "general" / "plugins" / "modules"
+        mod.mkdir(parents=True)
+        (mod / "mymod.py").write_text("")
+        monkeypatch.setitem(sys.modules, "ansible.constants", None)
+        monkeypatch.setattr("site.getsitepackages", lambda: [str(tmp_path)])
+        result = list(_iter_collection_module_paths())
+        assert any("mymod.py" in p for p in result)
 
 
 # ---------------------------------------------------------------------------

@@ -405,6 +405,44 @@ def _get_installed_collections(collection_paths=None) -> set[str]:
     return installed
 
 
+def _iter_collection_module_paths(collection_paths=None):
+    """Yield absolute paths to every module .py file in installed collections.
+
+    Checks both Ansible's COLLECTIONS_PATHS and venv site-packages, since
+    pip/uv installs collections into site-packages rather than ~/.ansible/collections.
+    """
+    if collection_paths is None:
+        import site
+
+        try:
+            import ansible.constants as C
+
+            collection_paths = list(C.COLLECTIONS_PATHS or [])  # type: ignore[attr-defined]
+        except ImportError:
+            collection_paths = []
+
+        # Also search venv/system site-packages for pip-installed collections.
+        for sp in site.getsitepackages():
+            if sp not in collection_paths:
+                collection_paths.append(sp)
+
+    seen: set[str] = set()
+    for cp in collection_paths:
+        ac_dir = Path(cp) / "ansible_collections"
+        if not ac_dir.is_dir():
+            continue
+        try:
+            for modules_dir in ac_dir.glob("*/*/plugins/modules"):
+                for mod_file in modules_dir.iterdir():
+                    if mod_file.suffix == ".py" and not mod_file.name.startswith("_"):
+                        key = str(mod_file)
+                        if key not in seen:
+                            seen.add(key)
+                            yield key
+        except OSError:
+            pass
+
+
 def _cache_db_path() -> Path:
     cache_dir = Path.home() / ".cache" / "tf-python-provider"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -506,7 +544,9 @@ def discover_task_resources() -> tuple[list[type], list[type]]:
     seen_fqcns: set[str] = set()
 
     try:
-        for path in module_loader.all(path_only=True):
+        import itertools
+
+        for path in itertools.chain(module_loader.all(path_only=True), _iter_collection_module_paths()):
             if not path or not path.endswith(".py") or os.path.basename(path).startswith("_"):
                 continue
 
