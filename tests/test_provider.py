@@ -47,6 +47,12 @@ class TestGetResourcesAndDataSources:
             datasources = prov.get_data_sources()
         assert fake_ds in datasources
 
+    def test_get_ephemeral_resources_returns_ping(self):
+        from terrible_provider.ephemeral_ping import TerribleEphemeralPing
+
+        prov = TerribleProvider.__new__(TerribleProvider)
+        assert TerribleEphemeralPing in prov.get_ephemeral_resources()
+
     def test_get_data_sources_excludes_vault(self):
         prov = TerribleProvider.__new__(TerribleProvider)
         prov._task_resources = None

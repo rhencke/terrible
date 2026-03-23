@@ -5,6 +5,7 @@ from tf.schema import Schema
 from tf.utils import Diagnostics
 
 from .discovery import discover_task_resources
+from .ephemeral_ping import TerribleEphemeralPing
 from .host import TerribleHost
 
 log = logging.getLogger(__name__)
@@ -42,3 +43,6 @@ class TerribleProvider(Provider):
     def get_resources(self) -> list:
         self._ensure_discovered()
         return [TerribleHost, *self._task_resources]  # type: ignore[misc]
+
+    def get_ephemeral_resources(self) -> list:
+        return [TerribleEphemeralPing]
