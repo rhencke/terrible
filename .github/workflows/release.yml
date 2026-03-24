@@ -293,42 +293,40 @@ jobs:
       - name: Install test dependencies
         run: uv sync
 
-      - name: Poll registry until version is available
+      - name: Poll registry and download via tofu init
         run: |
           VERSION="${TAG_NAME#v}"
-          echo "Polling registry for rhencke/terrible v${VERSION}..."
+          mkdir -p /tmp/registry-check
+          cat > /tmp/registry-check/main.tf <<EOF
+          terraform {
+            required_providers {
+              terrible = {
+                source  = "rhencke/terrible"
+                version = "= ${VERSION}"
+              }
+            }
+          }
+          EOF
+          echo "Polling registry for rhencke/terrible v${VERSION} via tofu init..."
           for i in $(seq 1 30); do
-            STATUS=$(curl -sf \
-              "https://registry.terraform.io/v1/providers/rhencke/terrible/${VERSION}/download/${{ matrix.goos }}/${{ matrix.goarch }}" \
-              -o /dev/null -w "%{http_code}" 2>/dev/null || echo "000")
-            if [ "${STATUS}" = "200" ]; then
-              echo "Version ${VERSION} is available on the registry."
+            if tofu -chdir=/tmp/registry-check init -no-color 2>&1; then
+              echo "Version ${VERSION} downloaded from registry."
               exit 0
             fi
-            echo "Attempt ${i}/30: not yet available (HTTP ${STATUS}), waiting 30s..."
+            echo "Attempt ${i}/30: not yet available, waiting 30s..."
+            rm -rf /tmp/registry-check/.terraform /tmp/registry-check/.terraform.lock.hcl
             sleep 30
           done
           echo "Timed out waiting for registry to ingest v${VERSION} (15 minutes)."
           exit 1
 
-      - name: Download binary from registry
-        run: |
-          VERSION="${TAG_NAME#v}"
-          DOWNLOAD_JSON=$(curl -sf \
-            "https://registry.terraform.io/v1/providers/rhencke/terrible/${VERSION}/download/${{ matrix.goos }}/${{ matrix.goarch }}")
-          DOWNLOAD_URL=$(echo "${DOWNLOAD_JSON}" | jq -r '.download_url')
-          FILENAME=$(echo "${DOWNLOAD_JSON}" | jq -r '.filename')
-          mkdir -p /tmp/registry-bin
-          curl -fsSL "${DOWNLOAD_URL}" -o "/tmp/registry-bin/${FILENAME}"
-          cd /tmp/registry-bin && unzip "${FILENAME}"
-          echo "REGISTRY_BIN=/tmp/registry-bin/terraform-provider-terrible_v${VERSION}" >> "$GITHUB_ENV"
-
       - name: Run integration tests against registry binary
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: |
-          CLEAN_BIN="/tmp/registry-bin/terraform-provider-terrible"
-          ln -sf "${REGISTRY_BIN}" "${CLEAN_BIN}"
-          export TERRIBLE_PROVIDER_BIN="${CLEAN_BIN}"
+          VERSION="${TAG_NAME#v}"
+          REGISTRY_BIN=$(find /tmp/registry-check/.terraform/providers \
+            -type f -name "terraform-provider-terrible_v*" | head -1)
+          export TERRIBLE_PROVIDER_BIN="${REGISTRY_BIN}"
           make integration-test
 
   # ── Cleanup: delete draft if binary validation failed ─────────────────────
