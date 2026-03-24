@@ -66,7 +66,7 @@ examples/
 ## Architecture Notes
 
 - **State:** Persisted locally in `terrible_state.json`
-- **Provider full name:** `local/terrible/terrible`
+- **Provider full name:** `registry.terraform.io/rhencke/terrible`
 - **Ansible execution:** In-process via `TaskQueueManager` with a single thread-safe module execution lock
 - **Discovery:** Modules introspected at startup; schemas cached in SQLite at `~/.cache/tf-python-provider/discovery.db` keyed by Ansible version
 - **Task resources:** Common attributes: `host_id`, `result`, `changed`, `triggers`, `timeout`, `ignore_errors`, `changed_when`, `failed_when`, `environment`, `tags`, `skip_tags`, `async_seconds`, `poll_interval`, `delegate_to_id`

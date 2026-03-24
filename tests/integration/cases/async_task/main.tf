@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     terrible = {
-      source  = "local/terrible/terrible"
-      version = "0.0.1"
+      source  = "registry.terraform.io/rhencke/terrible"
+      version = ">= 0.0.1"
     }
   }
 }

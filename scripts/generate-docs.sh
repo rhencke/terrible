@@ -60,7 +60,7 @@ mkdir -p "${TFDIR}"
 cat > "${TFDIR}/main.tf" << 'EOF'
 terraform {
   required_providers {
-    terrible = { source = "local/terrible/terrible" }
+    terrible = { source = "registry.terraform.io/rhencke/terrible" }
   }
 }
 provider "terrible" {}
@@ -72,14 +72,14 @@ echo "Initialising Terraform config..."
 echo "Exporting provider schema..."
 TF_REATTACH_PROVIDERS="${REATTACH_JSON}" "${TF}" -chdir="${TFDIR}" providers schema -json > "${TMPDIR}/schema.json"
 
-# Rekey schema from local/terrible/terrible → registry.terraform.io/hashicorp/terrible
+# Rekey schema from registry.terraform.io/rhencke/terrible → registry.terraform.io/hashicorp/terrible
 # (tfplugindocs resolves "terrible" → registry.terraform.io/hashicorp/terrible internally)
 python3 - "${TMPDIR}/schema.json" "${TMPDIR}/schema-rekeyed.json" << 'PYEOF'
 import json, sys
 with open(sys.argv[1]) as f:
     schema = json.load(f)
 ps = schema["provider_schemas"]
-ps["registry.terraform.io/hashicorp/terrible"] = ps.pop("local/terrible/terrible")
+ps["registry.terraform.io/hashicorp/terrible"] = ps.pop("registry.terraform.io/rhencke/terrible")
 with open(sys.argv[2], "w") as f:
     json.dump(schema, f)
 PYEOF

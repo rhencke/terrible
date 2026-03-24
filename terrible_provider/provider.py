@@ -29,7 +29,7 @@ class TerribleProvider(Provider):
         return Schema(attributes=[])
 
     def full_name(self) -> str:
-        return "local/terrible/terrible"
+        return "registry.terraform.io/rhencke/terrible"
 
     def validate_config(self, diags: Diagnostics, config: dict):
         pass
