@@ -27,8 +27,6 @@ description: |-
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `mode` (String) If `status`, obtain the status. If `cleanup`, clean up the async job cache (by default in `~/.ansible_async/`) for the specified job `jid`, without waiting for it to finish.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 
 ### Read-Only

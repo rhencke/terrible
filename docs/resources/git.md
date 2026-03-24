@@ -47,9 +47,7 @@ description: |-
 - `remote` (String) Name of the remote.
 - `separate_git_dir` (String) The path to place the cloned repository. If specified, Git repository can be separated from working tree.
 - `single_branch` (Boolean) Clone only the history leading to the tip of the specified revision.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `ssh_opts` (String) Options git will pass to ssh when used as protocol, it works via `git`'s `GIT_SSH`/`GIT_SSH_COMMAND` environment variables. For older versions it appends `GIT_SSH_OPTS` (specific to this module) to the variables above or via a wrapper script. Other options can add to this list, like `key_file` and `accept_hostkey`. An example value could be `-o StrictHostKeyChecking=no` (although this particular option is better set by `accept_hostkey`). The module ensures that `BatchMode=yes` is always present to avoid prompts.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `track_submodules` (Boolean) If `true`, submodules will track the latest commit on their master branch (or other branch specified in `.gitmodules`).  If `false`, submodules will be kept at the revision specified by the main project. This is equivalent to specifying the `--remote` flag to git submodule update.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution

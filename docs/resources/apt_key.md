@@ -32,9 +32,7 @@ description: |-
 - `keyring` (String) The full path to specific keyring file in `/etc/apt/trusted.gpg.d/`.
 - `keyserver` (String) The keyserver to retrieve key from.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Ensures that the key is present (added) or absent (revoked).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `url` (String) The URL to retrieve key from.

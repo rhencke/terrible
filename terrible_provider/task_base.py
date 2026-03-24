@@ -157,8 +157,6 @@ def _run_module(
     changed_when: str | None = None,
     failed_when: str | None = None,
     environment: dict | None = None,
-    tags: list | None = None,
-    skip_tags: list | None = None,
     async_seconds: int | None = None,
     poll_interval: int | None = None,
     delegate_host_state: dict | None = None,
@@ -194,8 +192,8 @@ def _run_module(
             {
                 **dict(orig_cliargs),
                 "timeout": effective_timeout,
-                "tags": tags or ["all"],
-                "skip_tags": skip_tags or [],
+                "tags": ["all"],
+                "skip_tags": [],
             }
         )
 
@@ -217,8 +215,6 @@ def _run_module(
             task_dict["failed_when"] = failed_when
         if environment:
             task_dict["environment"] = environment
-        if tags:
-            task_dict["tags"] = tags
         if async_seconds and int(async_seconds) > 0:
             task_dict["async"] = int(async_seconds)
             task_dict["poll"] = int(poll_interval) if poll_interval else 15
@@ -275,8 +271,6 @@ _SKIP_ATTRS = frozenset(
         "changed_when",
         "failed_when",
         "environment",
-        "tags",
-        "skip_tags",
         "async_seconds",
         "poll_interval",
         "delegate_to_id",
@@ -413,8 +407,6 @@ class TerribleTaskBase(Resource):
             changed_when=planned.get("changed_when"),
             failed_when=planned.get("failed_when"),
             environment=planned.get("environment"),
-            tags=planned.get("tags"),
-            skip_tags=planned.get("skip_tags"),
             async_seconds=planned.get("async_seconds"),
             poll_interval=planned.get("poll_interval"),
             delegate_host_state=delegate_host,
@@ -522,8 +514,6 @@ class TerribleTaskBase(Resource):
             timeout=current.get("timeout"),
             failed_when=current.get("failed_when"),
             environment=current.get("environment"),
-            tags=current.get("tags"),
-            skip_tags=current.get("skip_tags"),
         )
 
     def import_(self, ctx: ImportContext, id: str) -> dict | None:

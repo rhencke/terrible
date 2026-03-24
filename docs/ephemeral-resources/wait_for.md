@@ -34,10 +34,8 @@ description: |-
 - `path` (String) Path to a file on the filesystem that must exist before continuing. `path` and `port` are mutually exclusive parameters.
 - `port` (Number) Port number to poll. `path` and `port` are mutually exclusive parameters.
 - `search_regex` (String) Can be used to match a string in either a file or a socket connection. Defaults to a multiline regex. When inspecting a system log file and a static string, remember that Ansible by default logs its own actions there; see the notes and examples for information.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `sleep` (Number) Number of seconds to sleep between checks. Before Ansible 2.3 this was hardcoded to 1 second.
 - `state` (String) Either `present`, `started`, or `stopped`, `absent`, or `drained`. When checking a port `started` will ensure the port is open, `stopped` will check that it is closed, `drained` will check for active connections. When checking for a file or a search string `present` or `started` will ensure that the file or string is present before continuing, `absent` will check that file is absent or removed.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 
 ### Read-Only

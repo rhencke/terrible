@@ -34,10 +34,8 @@ description: |-
 - `pattern` (String) A substring to look for as would be found in the output of the *ps* command as a stand-in for a status result. If the string is found, the service will be assumed to be running. This option is mainly for use with init scripts that don't support the `status` option.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `runlevels` (String) The runlevels this script should be enabled/disabled from. Use this to override the defaults set by the package or init script itself.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `sleep` (Number) If the service is being `restarted` or `reloaded` then sleep this many seconds between the stop and start command. This helps to workaround badly behaving services.
 - `state` (String) `started`/`stopped` are idempotent actions that will not run commands unless necessary. Not all init scripts support `restarted` nor `reloaded` natively, so these will both trigger a stop and start as needed.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

@@ -19,7 +19,7 @@ from pathlib import Path
 
 import yaml
 from tf.schema import Attribute, Schema
-from tf.types import Bool, List, Map, NormalizedJson, Number, String
+from tf.types import Bool, Map, NormalizedJson, Number, String
 
 from .task_base import _MODULE_TIMEOUT, TerribleTaskBase
 from .task_datasource import TerribleTaskDataSource
@@ -204,18 +204,6 @@ _FRAMEWORK_ATTRS = [
         optional=True,
     ),
     Attribute(
-        "tags",
-        List(String()),
-        description="Run only tasks with these Ansible tags (list of strings).",
-        optional=True,
-    ),
-    Attribute(
-        "skip_tags",
-        List(String()),
-        description="Skip tasks with these Ansible tags (list of strings).",
-        optional=True,
-    ),
-    Attribute(
         "async_seconds",
         Number(),
         description="Run the task asynchronously, timing out after this many seconds. 0 = synchronous (default).",
@@ -279,18 +267,6 @@ _EPHEMERAL_FRAMEWORK_ATTRS = [
         "environment",
         Map(String()),
         description="Environment variables set for the task (map of name→value).",
-        optional=True,
-    ),
-    Attribute(
-        "tags",
-        List(String()),
-        description="Run only tasks with these Ansible tags (list of strings).",
-        optional=True,
-    ),
-    Attribute(
-        "skip_tags",
-        List(String()),
-        description="Skip tasks with these Ansible tags (list of strings).",
         optional=True,
     ),
     Attribute(

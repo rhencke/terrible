@@ -35,9 +35,7 @@ description: |-
 - `name` (String) The name of a Python library to install or the url(bzr+,hg+,git+,svn+) of the remote package. This can be a list (since 2.2) and contain version specifiers (since 2.7).
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `requirements` (String) The path to a pip requirements file, which should be local to the remote system. File can be specified as a relative path if using the `chdir` option.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) The state of module. The `forcereinstall` option is only available in Ansible 2.1 and above.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `umask` (String) The system umask to apply before installing the pip package. This is useful, for example, when installing on systems that have a very restrictive umask by default (e.g., `0077`) and you want to `pip install` packages which are to be used by all users. Note that this requires you to specify desired umask mode as an octal string, (e.g., `0022`).

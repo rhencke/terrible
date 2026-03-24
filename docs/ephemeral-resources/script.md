@@ -31,6 +31,4 @@ description: |-
 - `free_form` (String) Path to the local script file followed by optional arguments.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `removes` (String) A filename on the remote node, when it does not exist, this step will **not** be run.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.

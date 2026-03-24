@@ -40,8 +40,6 @@ description: |-
 - `http_agent` (String) Header to identify as, generally appears in web server logs.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `tmp_dest` (String) Absolute path of where temporary file is downloaded to. When run on Ansible 2.5 or greater, path defaults to ansible's `remote_tmp` setting. When run on Ansible prior to 2.5, it defaults to `TMPDIR`, `TEMP` or `TMP` env variables or a platform specific value. https://docs.python.org/3/library/tempfile.html#tempfile.tempdir.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution

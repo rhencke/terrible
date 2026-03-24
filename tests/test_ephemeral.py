@@ -93,7 +93,7 @@ class TestEphemeralResource:
         assert result == {"ping": "pong"}
 
     def test_open_passes_execution_params_to_run_module(self):
-        """open() should forward failed_when, environment, tags, skip_tags, delegate_to_id."""
+        """open() should forward failed_when, environment, delegate_to_id."""
         prov = MagicMock()
         host = {"host": "127.0.0.1", "connection": "local"}
         delegate_host = {"host": "10.0.0.2", "connection": "local"}
@@ -109,8 +109,6 @@ class TestEphemeralResource:
             "host_id": "h1",
             "failed_when": "rc != 0",
             "environment": '{"PATH": "/usr/bin"}',
-            "tags": '["test"]',
-            "skip_tags": '["skip"]',
             "delegate_to_id": "h2",
         }
         with (
@@ -121,8 +119,8 @@ class TestEphemeralResource:
         kwargs = mock_run.call_args[1]
         assert kwargs.get("failed_when") == "rc != 0"
         assert kwargs.get("environment") == '{"PATH": "/usr/bin"}'
-        assert kwargs.get("tags") == '["test"]'
-        assert kwargs.get("skip_tags") == '["skip"]'
+        assert "tags" not in kwargs
+        assert "skip_tags" not in kwargs
 
     def test_open_adds_error_on_failure(self):
         prov = MagicMock()

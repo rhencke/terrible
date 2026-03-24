@@ -33,8 +33,6 @@ description: |-
 - `reboot_command` (String) Command to run that reboots the system, including any parameters passed to the command. Can be an absolute path to the command or just the command name. If an absolute path to the command is not given, `search_paths` on the target system will be searched to find the absolute path. This will cause `pre_reboot_delay`, `post_reboot_delay`, and `msg` to be ignored.
 - `reboot_timeout` (Number) Maximum seconds to wait for machine to reboot and respond to a test command. This timeout is evaluated separately for both reboot verification and test command success so the maximum execution time for the module is twice this amount.
 - `search_paths` (String) Paths to search on the remote machine for the `shutdown` command. *Only* these paths will be searched for the `shutdown` command. `PATH` is ignored in the remote node when searching for the `shutdown` command.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `test_command` (String) Command to run on the rebooted host and expect success from to determine the machine is ready for further tasks.
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 

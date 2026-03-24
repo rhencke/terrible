@@ -33,9 +33,7 @@ description: |-
 - `install_python_apt` (Boolean) Whether to automatically try to install the Python apt library or not, if it is not already installed. Without this library, the module does not work. Runs `apt-get install python3-apt`. Only works with the system Python. If you are using a Python on the remote that is not the system Python, set `install_python_apt=false` and ensure that the Python apt library for your Python version is installed some other way.
 - `mode` (String) The octal mode for newly created files in `sources.list.d`. Default is what system uses (probably 0644).
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) A source string state.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `update_cache` (Boolean) Run the equivalent of `apt-get update` when a change occurs. Cache updates are run after making changes.

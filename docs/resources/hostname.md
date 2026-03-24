@@ -29,8 +29,6 @@ description: |-
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `use` (String) Which strategy to use to update the hostname. If not set we try to autodetect, but this can be problematic, particularly with containers as they can present misleading information. Note that `systemd` should be specified for RHEL/EL/CentOS 7+. Older distributions should use `redhat`.

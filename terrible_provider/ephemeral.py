@@ -65,8 +65,6 @@ class EphemeralResource:
             timeout=config.get("timeout"),
             failed_when=config.get("failed_when"),
             environment=config.get("environment"),
-            tags=config.get("tags"),
-            skip_tags=config.get("skip_tags"),
             delegate_host_state=delegate_host,
         )
 
