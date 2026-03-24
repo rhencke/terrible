@@ -258,7 +258,7 @@ def _run_module(
                 tqm.cleanup()
             loader.cleanup_all_tmp_files()
             if not _in_main:
-                _signal.signal = _real_signal  # type: ignore[method-assign]
+                _signal.signal = _real_signal
             _ansible_context.CLIARGS = orig_cliargs
 
     return cb.result or {"failed": True, "msg": "No result captured from Ansible"}
