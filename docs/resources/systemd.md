@@ -36,9 +36,7 @@ description: |-
 - `no_block` (Boolean) Do not synchronously wait for the requested operation to finish. Enqueued job will continue without Ansible blocking on its completion.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `scope` (String) Run `systemctl` within a given service manager scope, either as the default system scope `system`, the current user's scope `user`, or the scope of all users `global`. For systemd to work with `user`, the executing user must have its own instance of dbus started and accessible (systemd requirement). The user dbus process is normally started during normal login, but not during the run of Ansible tasks. Otherwise you will probably get a 'Failed to connect to bus: no such file or directory' error. The user must have access, normally given via setting the `XDG_RUNTIME_DIR` variable, see the example below.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) `started`/`stopped` are idempotent actions that will not run commands unless necessary. `restarted` will always bounce the unit. `reloaded` will always reload and if the service is not running at the moment of the reload, it is started. If set, requires `name`.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

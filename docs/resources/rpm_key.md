@@ -30,9 +30,7 @@ description: |-
 - `fingerprint` (String) The long-form fingerprint of the key being imported. This will be used to verify the specified key.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) If the key will be imported or removed from the rpm db.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `validate_certs` (Boolean) If `false` and the `key` is a url starting with `https`, SSL certificates will not be validated. This should only be used on personally controlled sites using self-signed certificates.

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from tf.types import Bool, List, Map, NormalizedJson, Number, String
+from tf.types import Bool, Map, NormalizedJson, Number, String
 
 from terrible_provider.discovery import (
     _DOC_RE,
@@ -206,10 +206,8 @@ class TestBuildSchema:
         assert isinstance(attr_map["triggers"].type.value_type, String)
         assert isinstance(attr_map["environment"].type, Map)
         assert isinstance(attr_map["environment"].type.value_type, String)
-        assert isinstance(attr_map["tags"].type, List)
-        assert isinstance(attr_map["tags"].type.element_type, String)
-        assert isinstance(attr_map["skip_tags"].type, List)
-        assert isinstance(attr_map["skip_tags"].type.element_type, String)
+        assert "tags" not in attr_map
+        assert "skip_tags" not in attr_map
 
     def test_framework_names_excluded_from_options(self):
         options = {"id": {"type": "str"}, "path": {"type": "str"}}
@@ -297,18 +295,16 @@ class TestBuildEphemeralSchema:
     def test_has_execution_context_attrs(self):
         schema, _ = _build_ephemeral_schema({}, {})
         names = {a.name for a in schema.attributes}
-        expected = {"timeout", "ignore_errors", "failed_when", "environment", "tags", "skip_tags", "delegate_to_id"}
+        expected = {"timeout", "ignore_errors", "failed_when", "environment", "delegate_to_id"}
         assert expected <= names
+        assert "tags" not in names
+        assert "skip_tags" not in names
 
     def test_ephemeral_framework_attr_types(self):
         schema, _ = _build_ephemeral_schema({}, {})
         attr_map = {a.name: a for a in schema.attributes}
         assert isinstance(attr_map["environment"].type, Map)
         assert isinstance(attr_map["environment"].type.value_type, String)
-        assert isinstance(attr_map["tags"].type, List)
-        assert isinstance(attr_map["tags"].type.element_type, String)
-        assert isinstance(attr_map["skip_tags"].type, List)
-        assert isinstance(attr_map["skip_tags"].type.element_type, String)
 
     def test_options_included(self):
         options = {"cmd": {"type": "str", "required": True}}

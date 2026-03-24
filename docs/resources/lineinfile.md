@@ -39,9 +39,7 @@ description: |-
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `regexp` (String) The regular expression to look for in every line of the file. For `state=present`, the pattern to replace if found. Only the last line found will be replaced. For `state=absent`, the pattern of the line(s) to remove. If the regular expression is not matched, the line will be added to the file in keeping with `insertbefore` or `insertafter` settings. When modifying a line the regexp should typically match both the initial state of the line as well as its state after replacement by `line` to ensure idempotence. Uses Python regular expressions. See https://docs.python.org/3/library/re.html.
 - `search_string` (String) The literal string to look for in every line of the file. This does not have to match the entire line. For `state=present`, the line to replace if the string is found in the file. Only the last line found will be replaced. For `state=absent`, the line(s) to remove if the string is in the line. If the literal expression is not matched, the line will be added to the file in keeping with `insertbefore` or `insertafter` settings. Mutually exclusive with `backrefs` and `regexp`.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether the line should be there or not.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

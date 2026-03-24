@@ -48,9 +48,7 @@ description: |-
 - `policy_rc_d` (Number) Force the exit code of `/usr/sbin/policy-rc.d`. For example, if `policy_rc_d=101` the installed package will not trigger a service start. If `/usr/sbin/policy-rc.d` already exists, it is backed up and restored after the package installation. If `null`, the `/usr/sbin/policy-rc.d` is not created/changed.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `purge` (Boolean) Will force purging of configuration files if `state=absent` or `autoremove=yes`.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Indicates the desired package state. `latest` ensures that the latest version is installed. `build-dep` ensures the package build dependencies are installed. `fixed` attempt to correct a system with broken dependencies in place.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `update_cache` (Boolean) Run the equivalent of `apt-get update` before the operation. Can be run as part of the package installation or as a separate step. Default is not to update the cache.

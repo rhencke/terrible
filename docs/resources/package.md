@@ -30,8 +30,6 @@ description: |-
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `use` (String) The required package manager module to use (`dnf`, `apt`, and so on). The default `auto` will use existing facts or try to auto-detect it. You should only use this field if the automatic selection is not working for some reason. Since version 2.17 you can use the `ansible_package_use` variable to override the automatic detection, but this option still takes precedence.

@@ -37,9 +37,7 @@ description: |-
 - `password` (String) `--password` parameter passed to svn when svn is less than version 1.10.0. This is not secure and the password will be leaked to argv. `--password-from-stdin` parameter when svn is greater or equal to version 1.10.0.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `revision` (String) Specific revision to checkout.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `switch` (Boolean) If `false`, do not call svn switch before update.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `update` (Boolean) If `false`, do not retrieve new revisions from the origin repository.

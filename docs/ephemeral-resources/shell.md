@@ -31,10 +31,8 @@ description: |-
 - `free_form` (String) The shell module takes a free form command to run, as a string. There is no actual parameter named 'free form'. See the examples on how to use this module.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `removes` (String) A filename, when it does not exist, this step will **not** be run.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `stdin` (String) Set the stdin of the command directly to the specified value.
 - `stdin_add_newline` (Boolean) Whether to append a newline to stdin data.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 
 ### Read-Only

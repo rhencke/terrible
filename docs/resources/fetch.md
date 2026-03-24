@@ -32,8 +32,6 @@ description: |-
 - `flat` (Boolean) Allows you to override the default behavior of appending hostname/path/to/file to the destination. If `dest` ends with '/', it will use the basename of the source file, similar to the copy module. This can be useful if working with a single host, or if retrieving files that are uniquely named per host. If using multiple hosts with the same filename, the file will be overwritten for each host.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `validate_checksum` (Boolean) Verify that the source and destination checksums match after the files are fetched.

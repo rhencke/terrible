@@ -34,10 +34,8 @@ description: |-
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `removes` (String) A filename, when it does not exist, this step will **not** be run.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `stdin` (String) Set the stdin of the command directly to the specified value.
 - `stdin_add_newline` (Boolean) Whether to append a newline to stdin data.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

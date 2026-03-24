@@ -40,9 +40,7 @@ description: |-
 - `marker_end` (String) This will be inserted at `{mark}` in the closing ansible block `marker`.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `prepend_newline` (Boolean) Prepend a blank line to the inserted block, if this does not appear at the beginning of the file. Note that this attribute is not considered when `state` is set to `absent`
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether the block should be there or not.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

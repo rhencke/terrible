@@ -35,10 +35,8 @@ description: |-
 - `local` (Boolean) Forces the use of "local" command alternatives on platforms that implement it. This is useful in environments that use centralized authentication when you want to manipulate the local groups. (for example, it uses `lgroupadd` instead of `groupadd`). This requires that these commands exist on the targeted host, otherwise it will be a fatal error.
 - `non_unique` (Boolean) This option allows to change the group ID to a non-unique value. Requires `gid`. Not supported on macOS or BusyBox distributions.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether the group should be present or not on the remote host.
 - `system` (Boolean) If `yes`, indicates that the group created is a system group.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 

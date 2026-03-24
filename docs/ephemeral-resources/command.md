@@ -32,11 +32,9 @@ description: |-
 - `free_form` (String) The command module takes a free form string as a command to run. There is no actual parameter named `free_form`.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
 - `removes` (String) A filename or (since 2.0) glob pattern. If a matching file exists, this step **will** be run. This is checked after `creates` is checked.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `stdin` (String) Set the stdin of the command directly to the specified value.
 - `stdin_add_newline` (Boolean) If set to `true`, append a newline to stdin data.
 - `strip_empty_ends` (Boolean) Strip empty lines from the end of stdout/stderr in result.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 
 ### Read-Only

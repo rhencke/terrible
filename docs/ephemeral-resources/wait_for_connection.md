@@ -27,9 +27,7 @@ description: |-
 - `environment` (Map of String) Environment variables set for the task (map of name→value).
 - `failed_when` (String) Jinja2 expression that overrides when the task is considered failed.
 - `ignore_errors` (Boolean) When true, a failed task does not raise a Terraform error.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `sleep` (Number) Number of seconds to sleep between checks.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 
 ### Read-Only

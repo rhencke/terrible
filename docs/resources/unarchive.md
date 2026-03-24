@@ -39,8 +39,6 @@ description: |-
 - `list_files` (Boolean) If set to True, return the list of files that are contained in the tarball.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `remote_src` (Boolean) Set to `true` to indicate the archived file is already on the remote system and not local to the Ansible controller. This option is mutually exclusive with `copy`.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `validate_certs` (Boolean) This only applies if using a https URL as the source of the file. This should only set to `false` used on personally controlled sites using self-signed certificate. Prior to 2.2 the code worked as if this was set to `true`.

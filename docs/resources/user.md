@@ -56,7 +56,6 @@ description: |-
 - `seuser` (String) Optionally sets the `seuser` type `user_u` on SELinux enabled systems.
 - `shell` (String) Optionally set the user's shell. On macOS, before Ansible 2.5, the default shell for non-system users was `/usr/bin/false`. Since Ansible 2.5, the default shell for non-system users on macOS is `/bin/bash`. On other operating systems, the default shell is determined by the underlying tool invoked by this module. See Notes for a per platform list of invoked tools. From Ansible 2.18, the type is changed to *path* from *str*.
 - `skeleton` (String) Optionally set a home skeleton directory. Requires `create_home` option!
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `ssh_key_bits` (Number) Optionally specify number of bits in SSH key to create. The default value depends on `ssh-keygen`.
 - `ssh_key_comment` (String) Optionally define the comment for the SSH key.
 - `ssh_key_file` (String) Optionally specify the SSH key filename. If this is a relative filename then it will be relative to the user's home directory. This parameter defaults to `.ssh/id_rsa`.
@@ -64,7 +63,6 @@ description: |-
 - `ssh_key_type` (String) Optionally specify the type of SSH key to generate. Available SSH key types will depend on implementation present on target host.
 - `state` (String) Whether the account should exist or not, taking action if the state is different from what is stated. See this [FAQ entry](https://docs.ansible.com/ansible/latest/reference_appendices/faq.html#running-on-macos-as-a-target) for additional requirements when removing users on macOS systems.
 - `system` (Boolean) When creating an account `state=present`, setting this to `true` makes the user a system account. This setting cannot be changed on existing users.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `uid` (Number) Optionally sets the *UID* of the user.

@@ -35,8 +35,6 @@ description: |-
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `regexp` (String) Assemble files only if the given regular expression matches the filename. If not set, all files are assembled. Every `\\` (backslash) must be escaped as `\\\\` to comply to YAML syntax. Uses [Python regular expressions](https://docs.python.org/3/library/re.html).
 - `remote_src` (Boolean) If `false`, it will search for src at originating/master machine. If `true`, it will go to the remote/target machine for the src.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 - `validate` (String) The validation command to run before copying into place. The path to the file to validate is passed in by `%s` which must be present as in the sshd example below. The command is passed securely so shell features like expansion and pipes won't work.

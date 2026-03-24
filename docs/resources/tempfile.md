@@ -30,10 +30,8 @@ description: |-
 - `path` (String) Location where temporary file or directory should be created. If path is not specified, the default system temporary directory will be used.
 - `poll_interval` (Number) Polling interval in seconds when async_seconds > 0. Defaults to 15.
 - `prefix` (String) Prefix of file/directory name created by module.
-- `skip_tags` (List of String) Skip tasks with these Ansible tags (list of strings).
 - `state` (String) Whether to create file or directory.
 - `suffix` (String) Suffix of file/directory name created by module.
-- `tags` (List of String) Run only tasks with these Ansible tags (list of strings).
 - `timeout` (Number) Override the default execution timeout (seconds). Defaults to 300.
 - `triggers` (Map of String) Arbitrary map of string values; any change triggers task re-execution
 
