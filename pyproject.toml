@@ -1,6 +1,6 @@
 [project]
 name = "terrible"
-version = "0.10.1"
+version = "0.10.2"
 description = "Terraform provider that exposes Ansible modules as Terraform-managed resources"
 readme = "README.md"
 requires-python = ">=3.13"
