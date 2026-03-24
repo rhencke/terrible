@@ -777,7 +777,7 @@ dev = [
 requires-dist = [
     { name = "ansible", specifier = ">=13.3.0" },
     { name = "pywinrm", specifier = ">=0.4.0" },
-    { name = "tf", directory = "/workspaces/tf" },
+    { name = "tf", git = "https://github.com/rhencke/tf?rev=feat%2Fephemeral-resources" },
 ]
 
 [package.metadata.requires-dev]
@@ -793,20 +793,13 @@ dev = [
 
 [[package]]
 name = "tf"
-source = { directory = "/workspaces/tf" }
+version = "1.1.0"
+source = { git = "https://github.com/rhencke/tf?rev=feat%2Fephemeral-resources#666a88dfb3c191a2bff38988bee3c0396c7a795f" }
 dependencies = [
     { name = "cryptography" },
     { name = "grpcio" },
     { name = "msgpack" },
     { name = "protobuf" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cryptography", specifier = ">43" },
-    { name = "grpcio", specifier = ">=1.67.1,<2.0.0" },
-    { name = "msgpack", specifier = ">=1.1.0,<2.0.0" },
-    { name = "protobuf", specifier = ">=6.0.0,<7.0.0" },
 ]
 
 [[package]]

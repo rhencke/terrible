@@ -57,8 +57,8 @@ select = ["E", "F", "B", "I", "UP", "SIM"]
 ignore = []
 
 [tool.uv.sources]
-# Using fork until Map type is merged upstream (hfern/tf#18)
-tf = { path = "/workspaces/tf" }
+# Using fork until Map type and ephemeral support are merged upstream (hfern/tf#18, rhencke/tf#1)
+tf = { git = "https://github.com/rhencke/tf", rev = "feat/ephemeral-resources" }
 
 [tool.ty]
 # strict mode — all checks enabled
