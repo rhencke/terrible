@@ -26,7 +26,7 @@ terraform {
       version = "~> 3.0"
     }
     terrible = {
-      source  = "local/terrible/terrible"
+      source  = "registry.terraform.io/rhencke/terrible"
       version = "0.0.1"
     }
   }

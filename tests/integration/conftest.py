@@ -24,8 +24,8 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).parent.parent.parent
-PROVIDER_HOST = "local"
-PROVIDER_NS = "terrible"
+PROVIDER_HOST = "registry.terraform.io"
+PROVIDER_NS = "rhencke"
 PROVIDER_TYPE = "terrible"
 PROVIDER_VERSION = "0.0.1"
 

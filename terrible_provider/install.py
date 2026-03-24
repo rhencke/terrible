@@ -15,8 +15,8 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
 
     p = argparse.ArgumentParser(description="Install local Python Terraform provider")
-    p.add_argument("--host", default="local", help="Provider host (default: local)")
-    p.add_argument("--namespace", default="terrible", help="Provider namespace (default: terrible)")
+    p.add_argument("--host", default="registry.terraform.io", help="Provider host (default: registry.terraform.io)")
+    p.add_argument("--namespace", default="rhencke", help="Provider namespace (default: rhencke)")
     p.add_argument("--project", default="terrible", help="Provider project (default: terrible)")
     p.add_argument("--version", default="0.0.1", help="Provider version (default: 0.0.1)")
     p.add_argument(

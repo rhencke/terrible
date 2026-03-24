@@ -255,22 +255,48 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   # ── Stage 5: registry validation (after publish) ─────────────────────────
-  # Polls the Terraform Registry until the new version is ingested.
-  # Success of tofu init is the validation — it proves registry.terraform.io
-  # can resolve and download the provider. Binary correctness was already
-  # covered by validate_binary above.
+  # Polls registry.terraform.io until the new version is ingested, then
+  # downloads the platform-specific binary via tofu init and runs the full
+  # integration test suite against it. Validates the end-to-end publish
+  # round-trip on each platform.
   validate_registry:
-    name: validate registry
+    name: validate registry (${{ matrix.os }})
     needs: [publish]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # OpenTofu has no arm64 Linux binary in the setup action yet
       - name: Install OpenTofu
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         uses: opentofu/setup-opentofu@v1
         with:
           tofu_wrapper: false
 
-      - name: Poll registry via tofu init
+      - name: Install test dependencies
+        run: uv sync
+
+      - name: Poll registry and download via tofu init
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: |
           VERSION="${TAG_NAME#v}"
           mkdir -p /tmp/registry-check
@@ -294,18 +320,30 @@ jobs:
           }
           EOF
           echo "Polling registry.terraform.io for rhencke/terrible v${VERSION} via tofu init..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if TF_CLI_CONFIG_FILE=/tmp/registry-check/.terraformrc \
                tofu -chdir=/tmp/registry-check init -no-color 2>&1; then
-              echo "Version ${VERSION} is available on the registry."
-              exit 0
+              # Verify the lock file contains exactly the expected version
+              if grep -q "\"${VERSION}\"" /tmp/registry-check/.terraform.lock.hcl 2>/dev/null; then
+                echo "Version ${VERSION} confirmed on registry.terraform.io."
+                exit 0
+              fi
+              echo "tofu init succeeded but lock file does not contain ${VERSION} — retrying."
             fi
-            echo "Attempt ${i}/30: not yet available, waiting 30s..."
+            echo "Attempt ${i}/60: not yet available, waiting 30s..."
             rm -rf /tmp/registry-check/.terraform /tmp/registry-check/.terraform.lock.hcl
             sleep 30
           done
-          echo "Timed out waiting for registry to ingest v${VERSION} (15 minutes)."
+          echo "Timed out waiting for registry to ingest v${VERSION} (30 minutes)."
           exit 1
+
+      - name: Run integration tests against registry binary
+        if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
+        run: |
+          REGISTRY_BIN=$(find /tmp/registry-check/.terraform/providers \
+            -type f -name "terraform-provider-terrible_v*" | head -1)
+          export TERRIBLE_PROVIDER_BIN="${REGISTRY_BIN}"
+          make integration-test
 
   # ── Cleanup: delete draft if binary validation failed ─────────────────────
   # Draft releases are invisible to the registry, so it is safe to delete them.

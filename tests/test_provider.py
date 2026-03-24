@@ -93,7 +93,7 @@ class TestGetResourcesAndDataSources:
 
     def test_full_name(self):
         prov = TerribleProvider.__new__(TerribleProvider)
-        assert prov.full_name() == "local/terrible/terrible"
+        assert prov.full_name() == "registry.terraform.io/rhencke/terrible"
 
     def test_model_prefix(self):
         prov = TerribleProvider.__new__(TerribleProvider)
