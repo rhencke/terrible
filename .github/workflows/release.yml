@@ -339,11 +339,7 @@ jobs:
 
       - name: Run integration tests against registry binary
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
-        run: |
-          REGISTRY_BIN=$(find /tmp/registry-check/.terraform/providers \
-            -type f -name "terraform-provider-terrible_v*" | head -1)
-          export TERRIBLE_PROVIDER_BIN="${REGISTRY_BIN}"
-          make integration-test
+        run: make registry-test
 
   # ── Cleanup: delete draft if binary validation failed ─────────────────────
   # Draft releases are invisible to the registry, so it is safe to delete them.

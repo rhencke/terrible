@@ -1,12 +1,13 @@
 unexport VIRTUAL_ENV
 
-.PHONY: help check test integration-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
+.PHONY: help check test integration-test registry-test test-all lint typecheck format install-hooks install-provider run-provider example-init example-apply example-fresh build-binary docs release
 
 help:
 	@echo "Makefile targets:"
 	@echo "  check                  - lint + typecheck + test-all + docs check (used by CI and pre-commit)"
 	@echo "  test                   - run unit tests with 100% coverage"
-	@echo "  integration-test       - run integration tests against localhost"
+	@echo "  integration-test       - run integration tests against localhost (local venv binary, dev mode)"
+	@echo "  registry-test          - run integration tests pulling provider from registry.terraform.io"
 	@echo "  test-all               - run unit + integration tests"
 	@echo "  install-hooks          - install git pre-commit hook"
 	@echo "  install-provider       - install provider into local terraform plugin registry"
@@ -39,7 +40,10 @@ test:
 	uv run pytest tests/ --ignore=tests/integration -q
 
 integration-test:
-	TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov --timeout=120
+	TERRIBLE_INTEGRATION=1 TERRIBLE_DEV_MODE=1 uv run pytest tests/integration/ -q --no-cov --timeout=120
+
+registry-test:
+	TERRIBLE_INTEGRATION=1 uv run pytest tests/integration/ -q --no-cov --timeout=300
 
 test-all: test integration-test
 

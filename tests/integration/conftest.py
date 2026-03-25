@@ -1,17 +1,21 @@
 """
 Integration test fixtures — run against the native host (no VMs).
 
-Session-scoped:
-  provider_process — starts the provider in --dev (reattach) mode once per
-                     session; dev mode uses insecure gRPC so there is no TLS
-                     overhead and no per-command provider process spawn.
-  provider_install — installs the provider into a filesystem mirror for
-                     'tofu init', and exposes TF_REATTACH_PROVIDERS so all
-                     subsequent terraform commands reuse the live process.
+Two modes, selected by TERRIBLE_DEV_MODE:
+
+  Dev mode (TERRIBLE_DEV_MODE=1):
+    Starts the provider binary from the local venv in --dev (reattach) mode.
+    Installs it into a filesystem mirror so 'tofu init' works offline.
+    Used by 'make integration-test'.
+
+  Registry mode (default, no env var):
+    No provider process is started and no filesystem mirror is configured.
+    'tofu init' pulls the provider directly from registry.terraform.io.
+    Used by 'make registry-test' and the validate_registry CI stage.
 
 Prerequisites:
   tofu or terraform on PATH
-  uv sync (or pip install -e .) already run
+  uv sync (or pip install -e .) already run (dev mode only)
 """
 
 import os
@@ -29,10 +33,11 @@ PROVIDER_NS = "rhencke"
 PROVIDER_TYPE = "terrible"
 PROVIDER_VERSION = "0.10.0"
 
+_DEV_MODE = bool(os.environ.get("TERRIBLE_DEV_MODE"))
+
 
 def _find_provider_entrypoint() -> Path:
-    # Allow explicit override — used by validate_binary and validate_registry CI
-    # stages to test the packaged binary rather than the source-tree binary.
+    # Allow explicit override — used by validate_binary CI stage.
     override = os.environ.get("TERRIBLE_PROVIDER_BIN")
     if override:
         return Path(override)
@@ -48,7 +53,6 @@ def _find_provider_entrypoint() -> Path:
     )
 
 
-_PROVIDER_ENTRYPOINT = _find_provider_entrypoint()
 _REATTACH_RE = _re.compile(r"TF_REATTACH_PROVIDERS='(.+)'")
 
 
@@ -62,15 +66,18 @@ def _find_tf() -> str:
 @pytest.fixture(scope="session")
 def provider_process():
     """
-    Start the provider in --dev mode and capture TF_REATTACH_PROVIDERS.
-
-    Dev mode uses an insecure gRPC socket (no TLS) and keeps the provider
-    process alive across all terraform commands in the session, eliminating
-    per-command Python startup (~340ms each).
+    Dev mode: start the provider binary in --dev mode and capture TF_REATTACH_PROVIDERS.
+    Registry mode: no-op, yields None.
     """
+    if not _DEV_MODE:
+        print("\n[setup] Registry mode — no local provider process", flush=True)
+        yield None
+        return
+
+    entrypoint = _find_provider_entrypoint()
     env = {**os.environ, "PYTHONUNBUFFERED": "1"}
     proc = subprocess.Popen(
-        [str(_PROVIDER_ENTRYPOINT), "--dev"],
+        [str(entrypoint), "--dev"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,  # PyInstaller binary writes to stderr; merge into stdout
         text=True,
@@ -111,25 +118,39 @@ def provider_process():
 @pytest.fixture(scope="session")
 def provider_install(tmp_path_factory, provider_process):
     """
-    Install the provider binary into a filesystem mirror directory and write a
-    .terraformrc pointing at it so tofu init works offline.
+    Dev mode: install the provider into a filesystem mirror; write a .terraformrc
+    pointing at it so 'tofu init' works offline. Exposes TF_REATTACH_PROVIDERS.
 
-    Also exposes TF_REATTACH_PROVIDERS so test commands reuse the live process.
+    Registry mode: write a .terraformrc that forces direct registry access
+    (suppresses any dev_overrides on the runner). No filesystem mirror.
     """
+    tf_bin = _find_tf()
+    print(f"[setup] Using terraform binary: {tf_bin}", flush=True)
+
+    tfrc = tmp_path_factory.mktemp("tfrc") / ".terraformrc"
+
+    if not _DEV_MODE:
+        tfrc.write_text("provider_installation {\n  direct {}\n}\n")
+        return {
+            "tfrc": tfrc,
+            "tf_bin": tf_bin,
+            "reattach_json": None,
+        }
+
     from tf.runner import install_provider
 
+    entrypoint = _find_provider_entrypoint()
     plugin_dir = tmp_path_factory.mktemp("plugins")
-    print(f"\n[setup] Installing provider from {_PROVIDER_ENTRYPOINT}", flush=True)
+    print(f"\n[setup] Installing provider from {entrypoint}", flush=True)
     install_provider(
         PROVIDER_HOST,
         PROVIDER_NS,
         PROVIDER_TYPE,
         PROVIDER_VERSION,
         plugin_dir,
-        _PROVIDER_ENTRYPOINT,
+        entrypoint,
     )
 
-    tfrc = tmp_path_factory.mktemp("tfrc") / ".terraformrc"
     tfrc.write_text(
         f"provider_installation {{\n"
         f"  filesystem_mirror {{\n"
@@ -142,8 +163,6 @@ def provider_install(tmp_path_factory, provider_process):
         f"}}\n"
     )
 
-    tf_bin = _find_tf()
-    print(f"[setup] Using terraform binary: {tf_bin}", flush=True)
     return {
         "plugin_dir": plugin_dir,
         "tfrc": tfrc,

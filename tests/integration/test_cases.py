@@ -65,11 +65,12 @@ def test_case(case_dir, tmp_path, provider_install, host_vars):
     # host_vars only apply to structured cases/ — examples have hardcoded hosts
     extra_vars = host_vars if case_dir.is_relative_to(CASES_DIR) else []
     tf_bin = provider_install["tf_bin"]
-    tf_env = {
-        **os.environ,
-        "TF_CLI_CONFIG_FILE": str(provider_install["tfrc"]),
-        "TF_REATTACH_PROVIDERS": provider_install["reattach_json"],
-    }
+    # Always strip TF_REATTACH_PROVIDERS from the base env so a stale dev-mode
+    # value in the shell cannot leak into registry-mode runs and cause a hang.
+    tf_env = {k: v for k, v in os.environ.items() if k != "TF_REATTACH_PROVIDERS"}
+    tf_env["TF_CLI_CONFIG_FILE"] = str(provider_install["tfrc"])
+    if provider_install["reattach_json"] is not None:
+        tf_env["TF_REATTACH_PROVIDERS"] = provider_install["reattach_json"]
     # init doesn't call ConfigureProvider; strip reattach to avoid edge cases
     tf_env_init = {k: v for k, v in tf_env.items() if k != "TF_REATTACH_PROVIDERS"}
     name = case_dir.name
