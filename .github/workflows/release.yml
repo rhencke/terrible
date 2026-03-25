@@ -59,10 +59,6 @@ jobs:
         if: "!(matrix.goos == 'linux' && matrix.goarch == 'arm64')"
         run: make integration-test
 
-      - name: Install patchelf (required by Nuitka onefile on Linux)
-        if: "matrix.goos == 'linux'"
-        run: sudo apt-get install -y patchelf
-
       - name: Build Nuitka binary
         run: |
           uv run python -m nuitka \
