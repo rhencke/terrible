@@ -78,7 +78,6 @@ build-binary:
 		--include-package=jinja2 \
 		--include-package=cryptography \
 		--include-package=terrible_provider \
-		--include-package=pkg_resources \
 		--include-package-data=ansible \
 		--include-package-data=ansible_collections \
 		--include-package-data=tf \
