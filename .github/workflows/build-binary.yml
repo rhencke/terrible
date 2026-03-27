@@ -1,0 +1,61 @@
+name: Build Binary
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Build Nuitka binary
+        run: |
+          uv run python -m nuitka \
+            --onefile \
+            --jobs=1 \
+            --assume-yes-for-downloads \
+            --include-package=ansible \
+            --include-package=ansible_collections \
+            --include-package=tf \
+            --include-package=grpc \
+            --include-package=jinja2 \
+            --include-package=cryptography \
+            --include-package=terrible_provider \
+            --include-package=pkg_resources \
+            --include-package-data=ansible \
+            --include-package-data=ansible_collections \
+            --include-package-data=tf \
+            --include-package-data=jinja2 \
+            --include-package-data=cryptography \
+            --output-filename=terraform-provider-terrible \
+            --output-dir=dist \
+            _terrible_main.py
+
+      - name: Smoke test binary
+        run: |
+          ls -lh dist/terraform-provider-terrible
+          timeout 10 dist/terraform-provider-terrible --help || true
