@@ -2,6 +2,8 @@ name: Build Binary
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 */6 * *'  # every 6 days — keeps ccache alive before the 7-day expiry
 
 jobs:
   build:

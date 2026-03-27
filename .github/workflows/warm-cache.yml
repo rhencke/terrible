@@ -1,0 +1,49 @@
+name: Warm Cache
+
+# Restores the Nuitka ccache on each platform every 6 days.
+# GitHub caches expire after 7 days of no access; this keeps them alive
+# without running a full build.
+
+on:
+  schedule:
+    - cron: '0 3 */6 * *'
+
+jobs:
+  warm:
+    name: warm (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goarch: arm64
+          - os: macos-latest
+            goarch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ccache
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get install -y ccache
+          else
+            brew install ccache
+          fi
+
+      - name: Resolve ccache dir
+        id: ccache
+        shell: bash
+        run: echo "dir=$(ccache --get-config cache_dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore ccache cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.ccache.outputs.dir }}
+          key: nuitka-ccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            nuitka-ccache-${{ runner.os }}-${{ runner.arch }}-
